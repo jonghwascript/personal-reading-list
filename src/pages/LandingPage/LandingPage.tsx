@@ -1,12 +1,13 @@
 import { ArrowRight } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import sampleBooks from '../../../data/sample-books.json';
 import { BookCover } from '../../components/BookCover/BookCover';
 import { Logo } from '../../components/Logo/Logo';
 import { SpineFace, spineStyle } from '../../components/SpineShelf/SpineShelf';
 import { Button, ButtonLink } from '../../components/ui/Button';
-import { canAnimate, gsap, useGSAP } from '../../lib/motion';
+import { afterLoad } from '../../lib/afterLoad';
+import { canAnimate, EASE } from '../../lib/motion';
 import { usePageTitle } from '../../lib/usePageTitle';
 import { useSession } from '../../state/SessionContext';
 import styles from './LandingPage.module.css';
@@ -77,24 +78,35 @@ export function LandingPage() {
   const chaptersRef = useRef<HTMLElement>(null);
 
   // Intro: copy rises line by line while the spines are slid onto their planks, left to right.
-  // useGSAP runs before first paint, so nothing flashes; reduced motion skips it entirely. The
-  // headline and lede only move — never fade from 0 — so they still count as painted at once
-  // (they are the page's Largest Contentful Paint).
-  useGSAP(
-    () => {
-      if (!canAnimate()) return;
-      const q = gsap.utils.selector(heroRef);
-      gsap
-        .timeline({ defaults: { ease: 'power3.out' } })
-        .from(q('[data-enter="kicker"]'), { y: 14, opacity: 0, duration: 0.5 })
-        .from(q('[data-enter="line"]'), { y: 24, duration: 0.8, stagger: 0.12 }, '-=0.2')
-        .from(q('[data-enter="lede"]'), { y: 12, duration: 0.6 }, '-=0.45')
-        .from(q('[data-enter="ledger"]'), { y: 16, opacity: 0, duration: 0.6 }, '-=0.4')
-        .from(q('[data-enter="cta"] > *'), { y: 14, opacity: 0, duration: 0.5, stagger: 0.08 }, '-=0.35')
-        .from(q('[data-enter="spine"]'), { yPercent: 105, duration: 0.7, ease: 'back.out(1.4)', stagger: { each: 0.03, from: 'start' } }, 0.15);
-    },
-    { scope: heroRef },
-  );
+  // A layout effect runs before first paint, so nothing flashes; reduced motion skips it entirely.
+  // The headline and lede only move — never fade from 0 — so they still count as painted at once
+  // (they are the page's Largest Contentful Paint). Times in ms from the start of the intro.
+  useLayoutEffect(() => {
+    const hero = heroRef.current;
+    if (!hero || !canAnimate()) return;
+    const all = (selector: string) => [...hero.querySelectorAll<HTMLElement>(selector)];
+    const rise = (els: HTMLElement[], at: number, y: number, duration: number, opts: { fade?: boolean; stagger?: number; easing?: string } = {}) =>
+      els.map((el, i) =>
+        el.animate([{ transform: `translateY(${y}px)`, ...(opts.fade ? { opacity: 0 } : {}) }, { transform: 'none', ...(opts.fade ? { opacity: 1 } : {}) }], {
+          duration,
+          delay: at + i * (opts.stagger ?? 0),
+          easing: opts.easing ?? EASE.outStrong,
+          fill: 'backwards',
+        }),
+      );
+    const animations = [
+      ...rise(all('[data-enter="kicker"]'), 0, 14, 500, { fade: true }),
+      ...rise(all('[data-enter="line"]'), 300, 24, 800, { stagger: 120 }),
+      ...rise(all('[data-enter="lede"]'), 770, 12, 600),
+      ...rise(all('[data-enter="ledger"]'), 970, 16, 600, { fade: true }),
+      ...rise(all('[data-enter="cta"] > *'), 1220, 14, 500, { fade: true, stagger: 80 }),
+      // Spines slide up out of their planks (which clip them), left to right.
+      ...all('[data-enter="spine"]').map((el, i) =>
+        el.animate([{ transform: 'translateY(105%)' }, { transform: 'none' }], { duration: 700, delay: 150 + i * 30, easing: EASE.back, fill: 'backwards' }),
+      ),
+    ];
+    return () => animations.forEach((a) => a.cancel());
+  }, []);
 
   useChapterMotion(chaptersRef);
 
@@ -258,15 +270,16 @@ function Book3D({ sample }: { sample: Sample }) {
 
 /**
  * As each chapter scrolls up, its book turns from spine-on to cover-on and its copy rises in.
- * Scrubbed to the scroll position, so scrolling back turns it back. ScrollTrigger is fetched on
- * demand to keep it out of the landing bundle; without motion the books simply rest at an angle.
+ * Scrubbed to the scroll position, so scrolling back turns it back. GSAP and ScrollTrigger are
+ * fetched after the page has loaded, keeping them off the first paint (the chapters sit below the
+ * fold); until then, and without motion, the books simply rest at an angle with their covers showing.
  */
 function useChapterMotion(scope: React.RefObject<HTMLElement | null>) {
   useEffect(() => {
     if (!canAnimate() || !scope.current) return;
     let ctx: gsap.Context | undefined;
     let cancelled = false;
-    void import('gsap/ScrollTrigger').then(({ ScrollTrigger }) => {
+    const cancelLoad = afterLoad(() => void Promise.all([import('gsap'), import('gsap/ScrollTrigger')]).then(([{ gsap }, { ScrollTrigger }]) => {
       if (cancelled || !scope.current) return;
       gsap.registerPlugin(ScrollTrigger);
       ctx = gsap.context(() => {
@@ -276,9 +289,10 @@ function useChapterMotion(scope: React.RefObject<HTMLElement | null>) {
           gsap.from(chapter.querySelector('[data-chapter-copy]'), { opacity: 0, y: 32, ease: 'power2.out', scrollTrigger: { ...scrollTrigger, end: 'top 45%' } });
         });
       }, scope.current);
-    });
+    }));
     return () => {
       cancelled = true;
+      cancelLoad();
       ctx?.revert();
     };
   }, [scope]);

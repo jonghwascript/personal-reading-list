@@ -1,24 +1,34 @@
-import { useGSAP } from '@gsap/react';
-import gsap from 'gsap';
-import { Flip } from 'gsap/Flip';
 import { useCallback, useEffect, useLayoutEffect, useRef, type MouseEvent, type RefObject } from 'react';
 import { flushSync } from 'react-dom';
 
 /*
- * GSAP is used for choreography CSS can't express well: grid re-layout (Flip), scroll-driven
- * storytelling (ScrollTrigger, registered in the year-review chunk only) and the landing intro.
+ * Everyday motion runs on the browser's own Web Animations API (element.animate), so no animation
+ * library sits on the first paint's critical path. GSAP is used only for scroll-driven storytelling
+ * (ScrollTrigger: the year in review, and the landing chapters, which fetch it after load).
  * Hovers and simple transitions stay in CSS.
  */
-gsap.registerPlugin(useGSAP, Flip);
 
-export { gsap, Flip, useGSAP };
+/** GSAP's eases, as CSS cubic-béziers. */
+export const EASE = {
+  out: 'cubic-bezier(0.33, 1, 0.68, 1)', // power2.out
+  outStrong: 'cubic-bezier(0.22, 1, 0.36, 1)', // power3.out
+  in: 'cubic-bezier(0.32, 0, 0.67, 0)', // power2.in
+  inOut: 'cubic-bezier(0.65, 0, 0.35, 1)', // power2.inOut
+  back: 'cubic-bezier(0.34, 1.56, 0.64, 1)', // back.out
+} as const;
 
 /**
  * Motion is opt-in by environment: off under prefers-reduced-motion, and off where there's no
- * matchMedia (jsdom in tests) so animations never leave elements mid-tween.
+ * matchMedia or Element.animate (jsdom in tests) so animations never leave elements mid-tween.
  */
 export function canAnimate(): boolean {
-  return typeof window !== 'undefined' && typeof window.matchMedia === 'function' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  return (
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    typeof Element !== 'undefined' &&
+    typeof Element.prototype.animate === 'function' &&
+    !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
 }
 
 /** Most items animated in one stagger; anything after appears at once so long lists aren't slow. */
@@ -40,40 +50,46 @@ export function useEnterStagger<T extends HTMLElement>(ref: RefObject<T | null>,
     const root = ref.current;
     if (!root || fresh.size === 0 || !canAnimate()) return;
     const nodes = [...root.querySelectorAll<HTMLElement>('[data-enter-id]')].filter((n) => fresh.has(n.dataset.enterId ?? ''));
-    const tween = gsap.fromTo(
-      nodes.slice(0, STAGGER_LIMIT),
-      { opacity: 0, y: 16 },
-      { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out', stagger: 0.03, clearProps: 'opacity,transform' },
+    const animations = nodes.slice(0, STAGGER_LIMIT).map((node, i) =>
+      node.animate([{ opacity: 0, transform: 'translateY(16px)' }, { opacity: 1, transform: 'none' }], {
+        duration: 300,
+        delay: i * 30,
+        easing: EASE.out,
+        fill: 'backwards',
+      }),
     );
     return () => {
       // Cleaned up before finishing (React StrictMode's mount→unmount→mount in dev, or a new page of
       // results mid-animation): forget these ids so the next run animates them instead of skipping.
-      if (tween.progress() < 1) fresh.forEach((id) => seen.current.ids.delete(id));
-      tween.revert();
+      if (animations.some((a) => a.playState !== 'finished')) fresh.forEach((id) => seen.current.ids.delete(id));
+      animations.forEach((a) => a.cancel());
     };
     // `signature` stands in for `ids`, whose array identity changes every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signature, resetKey]);
 }
 
-/** A short fade (and optional rise) whenever `key` changes to a non-empty value. */
-export function useEnterOnChange<T extends HTMLElement>(ref: RefObject<T | null>, key: string, vars: gsap.TweenVars = {}) {
+/** A short fade (and optional rise, in px) whenever `key` changes to a non-empty value. Duration in seconds. */
+export function useEnterOnChange<T extends HTMLElement>(ref: RefObject<T | null>, key: string, vars: { y?: number; duration?: number } = {}) {
   useLayoutEffect(() => {
     if (!key || !ref.current || !canAnimate()) return;
-    const tween = gsap.from(ref.current, { opacity: 0, duration: 0.25, ease: 'power2.out', clearProps: 'opacity,transform', ...vars });
-    return () => {
-      tween.revert();
-    };
+    const { y = 0, duration = 0.25 } = vars;
+    const animation = ref.current.animate([{ opacity: 0, transform: `translateY(${y}px)` }, { opacity: 1, transform: 'none' }], {
+      duration: duration * 1000,
+      easing: EASE.out,
+    });
+    return () => animation.cancel();
     // vars is a style literal from the caller; only a new key should restart the animation.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 }
 
 /**
- * Drives a native <dialog> from an `open` flag with GSAP enter/exit motion: the panel eases up
- * while the backdrop fades in (via the --backdrop-opacity variable its ::backdrop reads), and on
- * close it sinks away *before* dialog.close() runs, then `onClosed` lets the parent unmount it.
- * Without motion (reduced motion, tests) it opens and closes instantly.
+ * Drives a native <dialog> from an `open` flag with enter/exit motion: the panel eases up while the
+ * backdrop fades in (via the --backdrop-opacity property its ::backdrop reads, registered with
+ * @property in global.css so it can be animated), and on close it sinks away *before*
+ * dialog.close() runs, then `onClosed` lets the parent unmount it. Without motion (reduced motion,
+ * tests) it opens and closes instantly.
  */
 export function useAnimatedDialog(open: boolean, onClosed?: () => void) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -86,28 +102,22 @@ export function useAnimatedDialog(open: boolean, onClosed?: () => void) {
   useLayoutEffect(() => {
     const dialog = ref.current;
     if (!dialog) return;
-    let tween: gsap.core.Tween | null = null;
+    let animation: Animation | null = null;
 
     if (open) {
       if (!dialog.open) dialog.showModal();
       if (!shown.current && canAnimate()) {
-        tween = gsap.fromTo(
-          dialog,
-          { opacity: 0, y: 12, scale: 0.98, '--backdrop-opacity': 0 },
-          {
-            opacity: 1,
-            y: 0,
-            scale: 1,
-            '--backdrop-opacity': 1,
-            duration: 0.2,
-            // A smooth deceleration: an overshoot squeezed into 0.2s reads as a jolt, not a spring.
-            ease: 'power3.out',
-            onComplete: () => {
-              shown.current = true;
-              gsap.set(dialog, { clearProps: 'all' });
-            },
-          },
+        animation = dialog.animate(
+          [
+            { opacity: 0, transform: 'translateY(12px) scale(0.98)', '--backdrop-opacity': 0 },
+            { opacity: 1, transform: 'none', '--backdrop-opacity': 1 },
+          ],
+          // A smooth deceleration: an overshoot squeezed into 0.2s reads as a jolt, not a spring.
+          { duration: 200, easing: EASE.outStrong },
         );
+        animation.onfinish = () => {
+          shown.current = true;
+        };
       } else {
         shown.current = true;
       }
@@ -115,20 +125,29 @@ export function useAnimatedDialog(open: boolean, onClosed?: () => void) {
       shown.current = false;
       const finish = () => {
         if (dialog.open) dialog.close();
-        gsap.set(dialog, { clearProps: 'all' });
         onClosedRef.current?.();
       };
       if (canAnimate()) {
-        tween = gsap.to(dialog, { opacity: 0, y: 8, scale: 0.98, '--backdrop-opacity': 0, duration: 0.16, ease: 'power2.in', onComplete: finish });
+        animation = dialog.animate(
+          [
+            { opacity: 1, transform: 'none', '--backdrop-opacity': 1 },
+            { opacity: 0, transform: 'translateY(8px) scale(0.98)', '--backdrop-opacity': 0 },
+          ],
+          { duration: 160, easing: EASE.in, fill: 'forwards' },
+        );
+        animation.onfinish = () => {
+          finish();
+          animation?.cancel(); // drop the held end state so the next opening starts clean
+        };
       } else {
         finish();
       }
     }
 
     return () => {
-      if (!tween) return;
-      tween.kill();
-      gsap.set(dialog, { clearProps: 'all' });
+      if (!animation || animation.playState === 'finished') return;
+      animation.onfinish = null;
+      animation.cancel();
     };
   }, [open]);
 
@@ -145,29 +164,42 @@ export function useAnimatedDialog(open: boolean, onClosed?: () => void) {
 
 /**
  * FLIP for a grid of items marked `data-flip-id`: call `capture()` right before the state change
- * that re-orders or filters them; after React re-renders, items glide to their new places and new
- * arrivals fade in.
+ * that re-orders or filters them; after React re-renders, each item glides from where it was to
+ * where it is now, and new arrivals fade in.
  */
 export function useFlipGrid<T extends HTMLElement = HTMLDivElement>() {
   const ref = useRef<T>(null);
-  const pending = useRef<Flip.FlipState | null>(null);
+  const pending = useRef<Map<string, DOMRect> | null>(null);
 
   const capture = useCallback(() => {
     if (!ref.current || !canAnimate()) return;
-    pending.current = Flip.getState(ref.current.querySelectorAll('[data-flip-id]'));
+    const rects = new Map<string, DOMRect>();
+    ref.current.querySelectorAll<HTMLElement>('[data-flip-id]').forEach((el) => rects.set(el.dataset.flipId!, el.getBoundingClientRect()));
+    pending.current = rects;
   }, []);
 
   // Runs after every commit, but only acts when a capture is waiting.
   useLayoutEffect(() => {
-    const state = pending.current;
-    if (!state || !ref.current) return;
+    const before = pending.current;
+    if (!before || !ref.current) return;
     pending.current = null;
-    Flip.from(state, {
-      targets: ref.current.querySelectorAll('[data-flip-id]'),
-      duration: 0.55,
-      ease: 'power2.inOut',
-      stagger: 0.012,
-      onEnter: (els) => gsap.fromTo(els, { opacity: 0, scale: 0.85 }, { opacity: 1, scale: 1, duration: 0.4, ease: 'power2.out' }),
+    let moved = 0;
+    ref.current.querySelectorAll<HTMLElement>('[data-flip-id]').forEach((el) => {
+      const was = before.get(el.dataset.flipId!);
+      if (!was) {
+        el.animate([{ opacity: 0, transform: 'scale(0.85)' }, { opacity: 1, transform: 'none' }], { duration: 400, easing: EASE.out });
+        return;
+      }
+      const now = el.getBoundingClientRect();
+      const dx = was.left - now.left;
+      const dy = was.top - now.top;
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+      el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], {
+        duration: 550,
+        delay: moved++ * 12,
+        easing: EASE.inOut,
+        fill: 'backwards',
+      });
     });
   });
 

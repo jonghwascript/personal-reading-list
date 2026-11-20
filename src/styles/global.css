@@ -3,6 +3,13 @@
 /* Reader preferences (text size, spacing, font, high contrast) override tokens; keep after them. */
 @import './preferences.css';
 
+/* Registered so dialogs can animate their backdrop's dim (useAnimatedDialog in lib/motion.ts). */
+@property --backdrop-opacity {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 1;
+}
+
 /*
  * Self-hosted variable fonts (latin subset, SIL OFL — see public/fonts/OFL.txt). Same origin as the
  * app, so there's no extra connection before the first paint, and index.html preloads the two

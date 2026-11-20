@@ -36,7 +36,7 @@ What you can do:
 | Hosting | GitHub Pages via GitHub Actions (`.github/workflows/deploy-pages.yml`); `vercel.json` also included |
 | Styling | CSS Modules + design tokens (`starter/tokens.css`) |
 | Charts/Viz | Hand-built CSS/SVG charts; Canvas API for the shareable year card |
-| Other | GSAP (Flip, ScrollTrigger), @dnd-kit/core, lucide-react, Vitest + Testing Library |
+| Other | Web Animations API, GSAP ScrollTrigger (lazy-loaded), @dnd-kit/core, lucide-react, Vitest + Testing Library |
 
 ---
 
@@ -99,7 +99,7 @@ Search results and curated books are 145×214 cards on the same grid as the libr
 
 **Covers.** Every cover in the app shares one 145:214 portrait ratio; library and discovery grids use fixed 145px columns, so wider screens get more books per row rather than bigger covers. Missing covers get a hand-set placeholder (title and author in Lora on a muted spine colour) instead of a broken image, and Open Library's 1×1 "no cover" pixel is treated as missing.
 
-**Motion.** CSS handles hovers and simple transitions; GSAP handles choreography — the landing intro, shelf re-layout (Flip), the year-review scroll story (ScrollTrigger), search results staggering in, and dialogs that ease in and out. Everything is skipped under `prefers-reduced-motion`.
+**Motion.** CSS handles hovers and simple transitions. The browser's own Web Animations API (`element.animate`) handles the landing intro, shelf re-layout (a hand-rolled FLIP), search results staggering in and dialogs that ease in and out — so no animation library sits on the first paint. GSAP is kept only for scroll-driven storytelling (ScrollTrigger in the year in review and the landing chapters) and is loaded on demand. Everything is skipped under `prefers-reduced-motion`.
 
 **Navigation.** A sidebar on desktop (shelves with counts double as drag-and-drop targets) and a bottom bar on mobile; focus moves to each page's heading on navigation, behind a skip link.
 
@@ -116,7 +116,7 @@ I started with the foundation: a repository interface with two implementations (
 - **Edition picker:** inline expansion inside the card → a native dialog, once cards became narrow vertical cards.
 - **Palette:** I tried several palettes (a rebalanced pink/mint with a rose accent, a neon-cyan dark mode, an orange/sky pastel, a custom dark background) came back to the first pink/mint version, and finally moved to a reference-led "spine library" palette inspired by Stripe Press.
 - **Hover effects:** a simple lift on Discover covers → one shared `TiltCover` component used by every cover grid.
-- **Animation:** CSS-only → GSAP for the parts that are choreography rather than state transitions.
+- **Animation:** CSS-only → GSAP for the parts that are choreography rather than state transitions → the Web Animations API for everything except scroll-driven scenes, after Lighthouse showed GSAP's 39 KB on the landing page's critical path.
 - **Empty library:** switching straight to the dashboard after the first book made the page jump and lose focus; it now stays in a "getting started" layout until three books are added.
 
 ### What Surprised Me
@@ -179,8 +179,8 @@ Short, concrete feedback ("the buttons should line up at the bottom", "the modal
 - `@dnd-kit/core` with mouse, touch (long-press, so scrolling still works) and **keyboard** sensors. Keyboard dragging steps *shelf by shelf* rather than pixel by pixel: Space picks a book up, ↑/↓ choose a shelf, Space drops, Esc cancels — Enter still opens the book.
 - Cards stay real links: dnd-kit's `role="button"`, `aria-pressed` and "draggable" role description are stripped, and the drag instructions are attached with `aria-describedby`; every pick-up, hover and drop is announced.
 - Dropping on *Read* or *Currently Reading* applies the same rules as any other move (finish/start dates, progress), so drag-and-drop can't create inconsistent data.
-- **GSAP** for choreography CSS can't express well (hovers and simple transitions stay in CSS): **Flip** glides books to their new places when a shelf is sorted or filtered, **ScrollTrigger** turns the year in review into a calm scroll story, and timelines drive the landing intro, search results and dialogs. Counting numbers are `aria-hidden` duplicates so screen readers hear the final value at once; ScrollTrigger lives only in the year-review chunk.
-- Every animation respects `prefers-reduced-motion` (static highlight instead of the spring; GSAP checks it via `canAnimate()` and simply doesn't run).
+- **Web Animations API** for choreography CSS can't express well (hovers and simple transitions stay in CSS): a small FLIP (`useFlipGrid`) glides books to their new places when a shelf is sorted or filtered, and `element.animate` drives the landing intro, search results and dialogs. **GSAP ScrollTrigger** turns the year in review into a calm scroll story and turns the landing chapters' books; it lives in the year-review chunk and is fetched by the landing page only after load. Counting numbers are `aria-hidden` duplicates so screen readers hear the final value at once.
+- Every animation respects `prefers-reduced-motion` (static highlight instead of the spring; scripted motion checks it via `canAnimate()` and simply doesn't run).
 
 **What I learned:** Adding the drag layer exposed an unrelated bug: when the auth SDK finished loading in the background it rebuilt the guest repository and remounted the page under the reader. Splitting the guest and account repositories (and refreshing an on-screen library in place) fixed it.
 
@@ -242,7 +242,7 @@ Measured with Lighthouse on the deployed site (https://jonghwascript.github.io/p
 
 - Stretch features not yet built: Goodreads CSV import, activity timeline, bulk actions.
 - Real-device testing on the deployed site. Lighthouse clears every target on desktop (93 / 100 / 96 / 100) and mobile (86 / 100 / 92 / 91), but mobile performance has the least headroom over the 85 target.
-- Main bundle size: GSAP is in the main chunk because the landing intro must run before first paint.
+- Main bundle size: the landing page and library still share one main chunk (splitting the library out caused a layout shift on direct visits), though GSAP is no longer in it.
 
 ---
 

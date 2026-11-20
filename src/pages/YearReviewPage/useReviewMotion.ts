@@ -1,9 +1,13 @@
+import { useGSAP } from '@gsap/react';
+import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import type { RefObject } from 'react';
-import { canAnimate, gsap, useGSAP } from '../../lib/motion';
+import { canAnimate } from '../../lib/motion';
 
-// Imported here so ScrollTrigger ships only in the year-review chunk. It is *registered* lazily inside
-// the hook: registration touches window.matchMedia, which doesn't exist in jsdom (tests).
+// GSAP and ScrollTrigger are imported here so they ship only in the year-review chunk. ScrollTrigger
+// is *registered* lazily inside the hook: registration touches window.matchMedia, which doesn't exist
+// in jsdom (tests).
+gsap.registerPlugin(useGSAP);
 
 /** Counts an element's text from 0 up to its data-count value (the real number stays in the DOM). */
 function countUp(el: Element, scrollTrigger?: ScrollTrigger.Vars) {
