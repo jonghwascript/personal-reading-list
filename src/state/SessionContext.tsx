@@ -42,6 +42,14 @@ function writeGuestFlag(on: boolean) {
   }
 }
 
+/**
+ * Absolute URL of an app route, including the deploy base path — auth emails must link back to
+ * e.g. https://user.github.io/personal-reading-list/library, not the domain root.
+ */
+function appUrl(route: string): string {
+  return new URL(`${import.meta.env.BASE_URL}${route}`, window.location.origin).href;
+}
+
 async function auth() {
   const pending = getSupabase();
   if (!pending) throw new Error('Accounts are not configured for this deployment. Try the guest library instead.');
@@ -124,7 +132,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         const { data, error } = await (await auth()).signUp({
           email,
           password,
-          options: { emailRedirectTo: `${window.location.origin}/library` },
+          options: { emailRedirectTo: appUrl('library') },
         });
         if (error) throw error;
         if (data.session) {
@@ -138,7 +146,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       },
       async requestPasswordReset(email) {
         const { error } = await (await auth()).resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/reset-password`,
+          redirectTo: appUrl('reset-password'),
         });
         if (error) throw error;
       },

@@ -27,7 +27,8 @@ const ResetPasswordPage = named(() => import('./pages/AuthPages/AuthPages'), 'Re
 
 export function App() {
   return (
-    <BrowserRouter>
+    // BASE_URL is "/" locally and on Vercel, "/personal-reading-list/" on GitHub Pages.
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <AnnouncerProvider>
         <SessionProvider>
           <Suspense fallback={<FullPageLoading />}>
