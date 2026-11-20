@@ -1,5 +1,6 @@
 .page {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-12);
 }
 
@@ -16,6 +17,8 @@
 
   position: relative;
   display: grid;
+  /* minmax(0, …): wide content (the cover fan) must not stretch the column past the viewport. */
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-5);
   overflow: hidden;
   padding: var(--space-6) var(--space-5) var(--space-10);
@@ -130,11 +133,19 @@
 }
 
 .coversFan .coverItem {
-  width: clamp(5rem, 15vw, 8.5rem);
-  margin-inline: calc(clamp(5rem, 15vw, 8.5rem) * -0.12);
+  --fan-w: clamp(3.75rem, 15vw, 8.5rem);
+  width: var(--fan-w);
+  margin-inline: calc(var(--fan-w) * -0.12);
   transform: rotate(calc((var(--i) - 3) * 4deg)) translateY(calc(max(var(--i) - 3, 3 - var(--i)) * 6px));
   transform-origin: 50% 120%;
   transition: transform var(--duration-base) var(--ease-out);
+}
+
+/* Narrow phones: five highlights fit across 320px; the full list is further down the page. */
+@media (max-width: 30em) {
+  .coversFan .coverItem:nth-child(n + 6) {
+    display: none;
+  }
 }
 
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
@@ -304,7 +315,8 @@
 
 .chart {
   display: grid;
-  grid-template-columns: repeat(12, 1fr);
+  /* minmax(0, …) lets twelve months share a 288px phone column instead of widening the page. */
+  grid-template-columns: repeat(12, minmax(0, 1fr));
   align-items: end;
   gap: var(--space-2);
   height: 14rem;
@@ -350,6 +362,17 @@
   margin-top: var(--space-2);
   color: var(--color-text-tertiary);
   font-size: var(--text-xs);
+}
+
+@media (max-width: 30em) {
+  .chart {
+    gap: 3px;
+  }
+
+  .barLabel {
+    font-size: 0.5625rem; /* "Sep" still fits a 21px column; the table version has full names */
+    letter-spacing: -0.02em;
+  }
 }
 
 .facts {
