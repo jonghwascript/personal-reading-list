@@ -1,0 +1,531 @@
+[
+  {
+    "id": "short-novels",
+    "title": "Short novels for a weekend",
+    "description": "Under 200 pages and unforgettable — finishable in a sitting or two.",
+    "books": [
+      {
+        "title": "Small Things Like These",
+        "authors": [
+          "Claire Keegan"
+        ],
+        "workKey": "/works/OL23020966W",
+        "coverId": 10507091,
+        "publishedYear": 2020,
+        "pageCount": 112,
+        "isbn13": "9780571368709",
+        "subjects": [],
+        "editionCount": 53
+      },
+      {
+        "title": "Convenience Store Woman",
+        "authors": [
+          "村田沙耶香",
+          "Nancy Wu"
+        ],
+        "workKey": "/works/OL19744024W",
+        "coverId": 9315164,
+        "publishedYear": 2018,
+        "pageCount": 163,
+        "isbn13": "9781538555606",
+        "subjects": [
+          "Man-woman relationships",
+          "Social life and customers",
+          "Clerks (Retail trade)",
+          "Fiction",
+          "Man-woman relationships, fiction",
+          "Japan, fiction",
+          "Fiction, general",
+          "Social life and customs",
+          "FICTION / Contemporary Women",
+          "Manners and customs",
+          "FICTION / Literary",
+          "Convenience stores",
+          "Conformity",
+          "Relations entre hommes et femmes",
+          "Romans, nouvelles",
+          "Dépanneurs (Commerces)",
+          "Conformisme",
+          "Mœurs et coutumes",
+          "LANGUAGE ARTS & DISCIPLINES / Linguistics",
+          "Man-woman relationships--fiction",
+          "Conformity--fiction",
+          "Convenience stores--japan--fiction",
+          "Manners and customs--japan--fiction",
+          "Pl873.u73 c6613 2018",
+          "895.63/6"
+        ],
+        "editionCount": 22
+      },
+      {
+        "title": "The Old Man and the Sea",
+        "authors": [
+          "Ernest Hemingway"
+        ],
+        "workKey": "/works/OL63073W",
+        "coverId": 463307,
+        "publishedYear": 1952,
+        "pageCount": 131,
+        "isbn13": "9781559946360",
+        "subjects": [
+          "American Sea stories",
+          "Male friendship",
+          "Fishers",
+          "Fiction",
+          "Ameriška književnost",
+          "American fiction",
+          "Ancianos",
+          "Open Library Staff Picks",
+          "Fishing stories",
+          "Pescadores",
+          "Older men",
+          "open_syllabus_project",
+          "Kratka proza",
+          "Friendship",
+          "Amistad entre hombres",
+          "Ficción",
+          "Bildungsromans",
+          "American literature",
+          "Libros en letra grande",
+          "Alegorías",
+          "Historias de aventuras",
+          "Novela",
+          "Literatura estadounidense",
+          "Novela estadounidense",
+          "Reading Level-Grade 11"
+        ],
+        "editionCount": 307
+      },
+      {
+        "title": "Of Mice and Men",
+        "authors": [
+          "John Steinbeck"
+        ],
+        "workKey": "/works/OL23204W",
+        "coverId": 14319003,
+        "publishedYear": 1937,
+        "pageCount": 119,
+        "isbn13": "9781616571078",
+        "subjects": [
+          "contemporary fiction",
+          "literary fiction",
+          "classics",
+          "Labor Trilogy",
+          "psychological fiction",
+          "Male friendship",
+          "Goal (Psychology)",
+          "western stories",
+          "Fiction",
+          "Vida ranchera",
+          "Men",
+          "People with mental disabilities",
+          "Classic Literature",
+          "Ranch life",
+          "Drifters",
+          "Retrasados mentales",
+          "Open Library Staff Picks",
+          "Vaqueros",
+          "open_syllabus_project",
+          "Friendship",
+          "Amistad entre hombres",
+          "Cowboys",
+          "Ficción",
+          "Literary",
+          "Small Town & Rural"
+        ],
+        "editionCount": 293
+      },
+      {
+        "title": "Foster",
+        "authors": [
+          "Claire Keegan"
+        ],
+        "workKey": "/works/OL19956847W",
+        "coverId": 10335372,
+        "publishedYear": 1900,
+        "pageCount": 112,
+        "isbn13": "9780571255658",
+        "subjects": [
+          "Foster home care",
+          "Fiction",
+          "Fiction, general",
+          "Ireland, fiction"
+        ],
+        "editionCount": 13
+      },
+      {
+        "title": "Train Dreams",
+        "authors": [
+          "Denis Johnson"
+        ],
+        "workKey": "/works/OL15916948W",
+        "coverId": 7079698,
+        "publishedYear": 2006,
+        "pageCount": 116,
+        "isbn13": "9781847086624",
+        "subjects": [
+          "Railroad construction workers",
+          "Fiction",
+          "Reading Level-Grade 7",
+          "Reading Level-Grade 9",
+          "Reading Level-Grade 8",
+          "Reading Level-Grade 11",
+          "Reading Level-Grade 10",
+          "Reading Level-Grade 12",
+          "Fiction, historical, general",
+          "Fiction, historical",
+          "West (u.s.), fiction",
+          "History"
+        ],
+        "editionCount": 9
+      }
+    ]
+  },
+  {
+    "id": "book-club",
+    "title": "Made for book club conversations",
+    "description": "Stories with enough to argue about over a second cup of tea.",
+    "books": [
+      {
+        "title": "Tomorrow, and Tomorrow, and Tomorrow",
+        "authors": [
+          "Gabrielle Zevin"
+        ],
+        "workKey": "/works/OL26004554W",
+        "coverId": 12859975,
+        "publishedYear": 2022,
+        "pageCount": 460,
+        "isbn13": "9781529944792",
+        "subjects": [
+          "American literature",
+          "nyt:combined-print-and-e-book-fiction=2022-07-24",
+          "New York Times bestseller",
+          "Modern fiction",
+          "Fiction"
+        ],
+        "editionCount": 17
+      },
+      {
+        "title": "Lessons in Chemistry",
+        "authors": [
+          "Bonnie Garmus"
+        ],
+        "workKey": "/works/OL25344431W",
+        "coverId": 12725772,
+        "publishedYear": 2022,
+        "pageCount": 464,
+        "isbn13": "9781644738269",
+        "subjects": [
+          "nyt:hardcover-fiction=2022-04-24",
+          "New York Times bestseller",
+          "Women scientists",
+          "Fiction",
+          "Single mothers",
+          "Television cooking shows",
+          "Sex role",
+          "Nineteen sixties",
+          "Mères de famille monoparentale",
+          "Romans, nouvelles",
+          "Émissions de cuisine télévisées",
+          "Rôle selon le sexe",
+          "Années soixante (Vingtième siècle)",
+          "American literature"
+        ],
+        "editionCount": 21
+      },
+      {
+        "title": "Klara and the Sun",
+        "authors": [
+          "Kazuo Ishiguro"
+        ],
+        "workKey": "/works/OL20883297W",
+        "coverId": 10648686,
+        "publishedYear": 2019,
+        "pageCount": 334,
+        "isbn13": "9780593319925",
+        "subjects": [
+          "Fiction, science fiction, general",
+          "speculative fiction",
+          "nyt:combined-print-and-e-book-fiction=2021-03-21",
+          "New York Times bestseller",
+          "Fiction, dystopian",
+          "British and irish fiction (fictional works by one author)",
+          "The Future",
+          "Fiction",
+          "Artificial intelligence",
+          "Robots",
+          "Romance fiction",
+          "Friendship",
+          "Love",
+          "Paid companions (Household employees)",
+          "Intelligence artificielle",
+          "Romans, nouvelles",
+          "Amitié",
+          "Literary",
+          "Electronic books",
+          "FICTION / Literary",
+          "FICTION / Science Fiction / General",
+          "FICTION / Visionary & Metaphysical"
+        ],
+        "editionCount": 31
+      },
+      {
+        "title": "The Vanishing Half",
+        "authors": [
+          "Brit Bennett",
+          "Brit Bennett"
+        ],
+        "workKey": "/works/OL20799434W",
+        "coverId": 10095692,
+        "publishedYear": 2020,
+        "pageCount": 376,
+        "isbn13": "9780349701455",
+        "subjects": [
+          "African American",
+          "Twins",
+          "fiction",
+          "race",
+          "identity",
+          "compassion",
+          "nyt:combined-print-and-e-book-fiction=2020-06-21",
+          "New York Times bestseller",
+          "New York Times reviewed",
+          "Sisters, fiction",
+          "Twins, fiction",
+          "Fiction, psychological",
+          "Fiction, family life",
+          "Sisters",
+          "African American women",
+          "Identity (Philosophical concept)",
+          "Passing (Identity)",
+          "History",
+          "Literary",
+          "Fiction, family life, general",
+          "Coming of Age",
+          "Women",
+          "Historical Fiction",
+          "Contemporary",
+          "Literary Fiction"
+        ],
+        "editionCount": 16
+      },
+      {
+        "title": "Demon Copperhead",
+        "authors": [
+          "Barbara Kingsolver"
+        ],
+        "workKey": "/works/OL27052926W",
+        "coverId": 13141227,
+        "publishedYear": 2022,
+        "pageCount": 560,
+        "isbn13": "9780063251991",
+        "subjects": [
+          "nyt:combined-print-and-e-book-fiction=2022-11-06",
+          "New York Times bestseller",
+          "fiction",
+          "Coming of age",
+          "Small Town & Rural fiction",
+          "literary fiction",
+          "Literature",
+          "Mothers",
+          "Death",
+          "Opioid abuse",
+          "Orphans",
+          "Poverty",
+          "Teenage boys",
+          "Fiction, coming of age",
+          "Fiction, small town & rural",
+          "American fiction (fictional works by one author)"
+        ],
+        "editionCount": 11
+      },
+      {
+        "title": "Remarkably Bright Creatures",
+        "authors": [
+          "Shelby Van Pelt"
+        ],
+        "workKey": "/works/OL25382083W",
+        "coverId": 12019989,
+        "publishedYear": 2022,
+        "pageCount": 368,
+        "isbn13": "9781526649676",
+        "subjects": [
+          "nyt:hardcover-fiction=2022-05-22",
+          "New York Times bestseller",
+          "Octopuses",
+          "Fiction",
+          "Widows",
+          "Human-animal relationships",
+          "Mothers and sons",
+          "Missing persons",
+          "Investigation",
+          "Poulpes",
+          "Romans, nouvelles",
+          "Veuves",
+          "Relations homme-animal",
+          "Mères et fils",
+          "Personnes disparues",
+          "Enquêtes",
+          "Animal behavior",
+          "Mother-son relationship",
+          "Fiction, family life, general",
+          "Fiction, animals"
+        ],
+        "editionCount": 13
+      }
+    ]
+  },
+  {
+    "id": "better-work",
+    "title": "Ideas that change how you work",
+    "description": "Thoughtful books on craft, focus and building things well.",
+    "books": [
+      {
+        "title": "The Design of Everyday Things",
+        "authors": [
+          "Donald A. Norman"
+        ],
+        "workKey": "/works/OL1879162W",
+        "coverId": 10007224,
+        "publishedYear": 1988,
+        "pageCount": 271,
+        "isbn13": "9780465072996",
+        "subjects": [
+          "Ergonomie",
+          "Industrial Psychology",
+          "Industriële vormgeving",
+          "Industrial Design",
+          "Psychological aspects",
+          "Psychology textbooks",
+          "Psychological aspects of Industrial design",
+          "Textbooks",
+          "Aspect psychologique",
+          "Design",
+          "Humanities textbooks",
+          "Projetos (administracao)",
+          "Human engineering",
+          "Long Now Manual for Civilization",
+          "New York Times reviewed",
+          "Cognitive psychology",
+          "Livres numériques",
+          "Ergonomics",
+          "E-books",
+          "BUSINESS & ECONOMICS",
+          "Industries",
+          "Retailing",
+          "Product",
+          "PSYCHOLOGY",
+          "Applied Psychology"
+        ],
+        "editionCount": 16
+      },
+      {
+        "title": "Show Your Work!",
+        "authors": [
+          "Austin Kleon"
+        ],
+        "workKey": "/works/OL16821630W",
+        "coverId": 7284188,
+        "publishedYear": 2014,
+        "pageCount": 224,
+        "isbn13": "9781974052264",
+        "subjects": [
+          "Career development",
+          "Business networks",
+          "Success in business",
+          "Créativité",
+          "Schaffensprozess",
+          "Vocational guidance",
+          "Kreativität",
+          "Bekanntheit",
+          "Erfolg",
+          "Success",
+          "Netzwerk",
+          "Business",
+          "Kunst",
+          "nyt:advice-how-to-and-miscellaneous=2014-03-09",
+          "New York Times bestseller"
+        ],
+        "editionCount": 6
+      },
+      {
+        "title": "Slow Productivity",
+        "authors": [
+          "Cal Newport"
+        ],
+        "workKey": "/works/OL36996011W",
+        "coverId": 14545976,
+        "publishedYear": 2024,
+        "pageCount": 256,
+        "isbn13": "9780241652916",
+        "subjects": [
+          "Productivity",
+          "SELF-HELP / Self-Management / Time Management",
+          "Economic history",
+          "nyt:advice-how-to-and-miscellaneous=2024-03-24",
+          "New York Times bestseller"
+        ],
+        "editionCount": 5
+      },
+      {
+        "title": "The Manager's Path",
+        "authors": [
+          "Camille Fournier"
+        ],
+        "workKey": "/works/OL19860807W",
+        "coverId": 8667291,
+        "publishedYear": 2017,
+        "pageCount": 244,
+        "isbn13": "9781491973899",
+        "subjects": [
+          "Management",
+          "Business",
+          "Software Development",
+          "Professional employees",
+          "Personnel management",
+          "Handbooks, manuals",
+          "Leadership",
+          "Industrial management",
+          "Management -- Handbooks, manuals, etc",
+          "Wirtschaftsingenieur",
+          "BUSINESS & ECONOMICS / Leadership",
+          "COMPUTERS / Software Development & Engineering / General",
+          "TECHNOLOGY & ENGINEERING / Project Management"
+        ],
+        "editionCount": 1
+      },
+      {
+        "title": "Staff Engineer",
+        "authors": [
+          "Will Larson",
+          "Tanya Reilly"
+        ],
+        "workKey": "/works/OL24199831W",
+        "coverId": 10637714,
+        "publishedYear": 2021,
+        "pageCount": 371,
+        "isbn13": "9781736417911",
+        "subjects": [],
+        "editionCount": 1
+      },
+      {
+        "title": "Make Time",
+        "authors": [
+          "Jake Knapp"
+        ],
+        "workKey": "/works/OL19751640W",
+        "coverId": 14179816,
+        "publishedYear": 2018,
+        "pageCount": 306,
+        "isbn13": "9780525572428",
+        "subjects": [
+          "Self-realization",
+          "Time management",
+          "Work-life balance",
+          "Psychology"
+        ],
+        "editionCount": 4
+      }
+    ]
+  }
+]
