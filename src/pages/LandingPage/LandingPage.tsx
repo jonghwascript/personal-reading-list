@@ -227,7 +227,7 @@ export function LandingPage() {
 
       <footer className={styles.footer}>
         <p>
-          Book data from <a href="https://openlibrary.org">Open Library</a>. Built for the Frontend Mentor product
+          Book data and covers from <a href="https://openlibrary.org">Open Library</a>. Built for the Frontend Mentor product
           challenge. <Link to="/accessibility">Accessibility statement</Link>.
         </p>
       </footer>
