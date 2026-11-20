@@ -1,9 +1,12 @@
 import { ArrowRight, BookMarked, ChartNoAxesColumn, Search, Target } from 'lucide-react';
+import { useRef, type PointerEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import sampleBooks from '../../../data/sample-books.json';
 import { BookCover } from '../../components/BookCover/BookCover';
 import { Logo } from '../../components/Logo/Logo';
+import { TiltCover } from '../../components/TiltCover/TiltCover';
 import { Button, ButtonLink } from '../../components/ui/Button';
+import { canAnimate, gsap, useGSAP } from '../../lib/motion';
 import { usePageTitle } from '../../lib/usePageTitle';
 import { useSession } from '../../state/SessionContext';
 import styles from './LandingPage.module.css';
@@ -17,6 +20,14 @@ const pick = (title: string) => {
 
 // Hand-picked for colour variety across the collage; Piranesi shows off the styled placeholder.
 const HERO = ['Project Hail Mary', 'Circe', 'The Great Gatsby', 'Dune', 'Educated', 'Piranesi', 'The Fifth Season', 'Atomic Habits', 'Normal People'].map(pick);
+/**
+ * How far each hero cover drifts with the mouse (1 = average). Mixed values make the collage read
+ * as layered in depth rather than as one flat picture.
+ */
+const DEPTHS = [1.3, 0.7, 1.0, 0.8, 1.45, 0.9, 1.15, 0.6, 1.2];
+/** Each cover's starting spin in the intro, so they land like books tossed onto a table. */
+const ENTER_SPIN = [-8, 5, -4, 7, -6, 4, -5, 8, -3];
+
 const SHELF = ['Neuromancer', 'Born a Crime', 'The Left Hand of Darkness', 'The Pragmatic Programmer', '1984', 'Beloved'].map(pick);
 
 const FEATURES = [
@@ -31,6 +42,52 @@ export function LandingPage() {
   const { status, startGuest } = useSession();
   const navigate = useNavigate();
   const inSession = status === 'guest' || status === 'account';
+  const collageRef = useRef<HTMLDivElement>(null);
+  const heroRef = useRef<HTMLElement>(null);
+
+  // Intro timeline: copy rises line by line while the covers spring up from the centre outward.
+  // useGSAP runs before first paint, so nothing flashes; reduced motion skips it entirely.
+  useGSAP(
+    () => {
+      if (!canAnimate()) return;
+      const q = gsap.utils.selector(heroRef);
+      gsap
+        .timeline({ defaults: { ease: 'power3.out' } })
+        .from(q('[data-enter="kicker"]'), { y: 14, opacity: 0, duration: 0.5 })
+        .from(q('[data-enter="line"]'), { y: 32, opacity: 0, duration: 0.8, stagger: 0.12 }, '-=0.2')
+        .from(q('[data-enter="lede"]'), { y: 16, opacity: 0, duration: 0.6 }, '-=0.45')
+        .from(q('[data-enter="cta"] > *'), { y: 14, opacity: 0, duration: 0.5, stagger: 0.08 }, '-=0.35')
+        .from(q('[data-enter="note"]'), { opacity: 0, duration: 0.5 }, '-=0.2')
+        .from(
+          q('[data-enter="cover"]'),
+          {
+            y: 80,
+            opacity: 0,
+            scale: 0.88,
+            rotate: (i: number) => ENTER_SPIN[i] ?? 0,
+            duration: 1,
+            ease: 'back.out(1.3)',
+            stagger: { each: 0.07, from: 'center' },
+          },
+          0.1,
+        );
+    },
+    { scope: heroRef },
+  );
+
+  // Mouse parallax: the hero reports where the pointer is (-0.5…0.5) and CSS turns that into a gentle
+  // 3D turn of the collage plus per-cover depth shifts. CSS variables only — no re-renders.
+  const onHeroPointerMove = (e: PointerEvent<HTMLElement>) => {
+    const el = collageRef.current;
+    if (!el || e.pointerType !== 'mouse') return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    el.style.setProperty('--px', ((e.clientX - rect.left) / rect.width - 0.5).toFixed(3));
+    el.style.setProperty('--py', ((e.clientY - rect.top) / rect.height - 0.5).toFixed(3));
+  };
+  const onHeroPointerLeave = () => {
+    collageRef.current?.style.removeProperty('--px');
+    collageRef.current?.style.removeProperty('--py');
+  };
 
   const tryGuest = () => {
     startGuest();
@@ -63,17 +120,22 @@ export function LandingPage() {
       </header>
 
       <main id="main">
-        <section className={styles.hero} aria-labelledby="hero-title">
+        <section ref={heroRef} className={styles.hero} aria-labelledby="hero-title" onPointerMove={onHeroPointerMove} onPointerLeave={onHeroPointerLeave}>
           <div className={styles.heroCopy}>
-            <p className={styles.kicker}>A personal reading tracker</p>
+            <p className={styles.kicker} data-enter="kicker">
+              A personal reading tracker
+            </p>
             <h1 id="hero-title" className={styles.heroTitle}>
-              Your reading life, <em>beautifully organized.</em>
+              <span className={styles.heroLine} data-enter="line">
+                Your reading life,
+              </span>{' '}
+              <em data-enter="line">beautifully organized.</em>
             </h1>
-            <p className={styles.heroLede}>
+            <p className={styles.heroLede} data-enter="lede">
               Track what you’re reading, shelve what you’ve loved, and watch your year in books take shape. No feeds, no
               ads, no strangers’ opinions — just you and your books.
             </p>
-            <div className={styles.ctas}>
+            <div className={styles.ctas} data-enter="cta">
               <ButtonLink to="/signup" variant="primary" size="lg">
                 Sign up — it’s free
               </ButtonLink>
@@ -81,15 +143,25 @@ export function LandingPage() {
                 Try as guest
               </Button>
             </div>
-            <p className={styles.ctaNote}>The guest library comes stocked with 45 real books. No account needed.</p>
+            <p className={styles.ctaNote} data-enter="note">
+              The guest library comes stocked with 45 real books. No account needed.
+            </p>
           </div>
 
-          <div className={styles.collage} aria-hidden="true">
-            {HERO.map((book, i) => (
-              <div key={book.title} className={styles.collageItem} style={{ '--i': i } as React.CSSProperties}>
-                <BookCover book={book} size="M" priority={i < 6} />
-              </div>
-            ))}
+          <div className={styles.stage} aria-hidden="true">
+            <div ref={collageRef} className={styles.collage}>
+              {HERO.map((book, i) => (
+                <div key={book.title} className={styles.collageItem} style={{ '--i': i, '--depth': DEPTHS[i] } as React.CSSProperties}>
+                  <div data-enter="cover">
+                    <div className={styles.float}>
+                      <TiltCover>
+                        <BookCover book={book} size="M" priority={i < 6} />
+                      </TiltCover>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 

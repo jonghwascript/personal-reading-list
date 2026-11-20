@@ -61,6 +61,11 @@
   letter-spacing: -0.02em;
 }
 
+/* Block-level so the intro can move each line on its own. */
+.heroLine {
+  display: block;
+}
+
 .heroTitle em {
   display: block;
   color: var(--color-accent);
@@ -86,19 +91,37 @@
   font-size: var(--text-sm);
 }
 
-/* Fanned cover collage. Covers rise into place once on load (skipped under reduced motion). */
+/*
+ * Hero collage, in layers so each motion owns its own property and none overwrite another:
+ *   .stage        perspective for the 3D turn
+ *   .collage      fanned -4°, turns gently toward the mouse (rotateX/rotateY from --px/--py)
+ *   .collageItem  static stagger (translate) + depth parallax (transform, scaled by --depth)
+ *   [data-enter]  one-time intro, driven by a GSAP timeline in LandingPage.tsx
+ *   .float        slow idle bob (transform)
+ *   TiltCover     per-cover 3D tilt on hover
+ * Everything is small and slow; prefers-reduced-motion turns all of it off.
+ */
+.stage {
+  perspective: 1200px;
+}
+
 .collage {
+  --px: 0;
+  --py: 0;
+
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--space-4);
   max-width: 30rem;
   margin: 0 auto;
-  transform: rotate(-4deg);
+  transform: rotate(-4deg) rotateX(calc(var(--py) * -10deg)) rotateY(calc(var(--px) * 12deg));
+  transform-style: preserve-3d;
+  transition: transform 600ms var(--ease-out);
 }
 
 .collageItem {
-  animation: rise 700ms var(--ease-out) both;
-  animation-delay: calc(var(--i) * 60ms);
+  transform: translate3d(calc(var(--px) * var(--depth, 1) * 28px), calc(var(--py) * var(--depth, 1) * 22px), 0);
+  transition: transform 700ms var(--ease-out);
 }
 
 .collageItem:nth-child(3n + 2) {
@@ -109,10 +132,33 @@
   translate: 0 calc(-1 * var(--space-4));
 }
 
-@keyframes rise {
-  from {
-    opacity: 0;
-    transform: translateY(2rem);
+.float {
+  animation: bob calc(6s + var(--i) * 0.4s) ease-in-out infinite;
+  animation-delay: calc(var(--i) * -0.9s);
+}
+
+/* A barely-there breathing motion, each cover on its own rhythm. */
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-7px) rotate(calc((var(--depth, 1) - 1) * 2deg));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .collage {
+    transform: rotate(-4deg);
+  }
+
+  .collageItem {
+    transform: none;
+  }
+
+  .float {
+    animation: none;
   }
 }
 
