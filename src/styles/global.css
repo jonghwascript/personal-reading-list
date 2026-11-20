@@ -36,6 +36,12 @@
   margin: 0;
 }
 
+/* The reset above also strips the browser's `margin: auto` that centres modal dialogs in the
+   viewport; put it back for every <dialog> opened with showModal(). */
+dialog:modal {
+  margin: auto;
+}
+
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
