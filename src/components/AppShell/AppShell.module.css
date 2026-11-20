@@ -70,6 +70,21 @@
   transition: border-color var(--duration-fast) ease;
 }
 
+.searchLink span {
+  flex: 1;
+}
+
+.searchKbd {
+  padding: 0 var(--space-1);
+  border: 1px solid var(--color-border);
+  border-bottom-width: 2px;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-secondary);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+}
+
 .searchLink:hover {
   border-color: var(--color-accent);
   color: var(--color-text-secondary);

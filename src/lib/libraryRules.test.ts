@@ -1,5 +1,5 @@
 import type { Book, LibraryEntry, Shelf } from '../types';
-import { applyMove, filterEntries, findDuplicate, sortEntries } from './libraryRules';
+import { applyMove, filterEntries, findDuplicate, searchLibrary, sortEntries } from './libraryRules';
 
 const book = (over: Partial<Book> = {}): Book => ({
   id: 'b1',
@@ -80,5 +80,28 @@ describe('sortEntries / filterEntries', () => {
   it('filters by genre and minimum rating', () => {
     expect(filterEntries([a, b, c], { genre: 'Fiction' })).toEqual([b]);
     expect(filterEntries([a, b, c], { minRating: 4 })).toEqual([c]);
+  });
+});
+
+describe('searchLibrary', () => {
+  const circe = entry({ id: 'c', book: book({ title: 'Circé', authors: ['Madeline Miller'] }), notes: '' });
+  const road = entry({ id: 'r', book: book({ title: 'The Road', authors: ['Cormac McCarthy'] }), notes: 'Bleak but tender — father and son.' });
+  const song = entry({ id: 's', book: book({ title: 'The Song of Achilles', authors: ['Madeline Miller'] }), notes: '' });
+  const all = [circe, road, song];
+
+  it('matches titles, authors and notes, ignoring case and accents', () => {
+    expect(searchLibrary(all, 'circe').map((m) => m.entry.id)).toEqual(['c']);
+    expect(searchLibrary(all, 'MILLER').map((m) => m.entry.id)).toEqual(['c', 's']);
+    expect(searchLibrary(all, 'father')).toEqual([{ entry: road, fields: ['notes'] }]);
+  });
+
+  it('requires every word and ranks title matches first', () => {
+    expect(searchLibrary(all, 'miller song').map((m) => m.entry.id)).toEqual(['s']);
+    const ranked = searchLibrary([road, entry({ id: 'x', book: book({ title: 'Roadside Picnic', authors: ['Strugatsky'] }) })], 'road');
+    expect(ranked.map((m) => m.entry.id)).toEqual(['r', 'x']);
+  });
+
+  it('returns nothing for a blank query', () => {
+    expect(searchLibrary(all, '   ')).toEqual([]);
   });
 });

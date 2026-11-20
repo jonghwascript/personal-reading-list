@@ -117,3 +117,42 @@ export function authorsIn(entries: LibraryEntry[]): string[] {
     collator.compare(a.split(' ').at(-1) ?? a, b.split(' ').at(-1) ?? b),
   );
 }
+
+/** Lowercase, accent-free text for forgiving matching ("Circé" finds "circe"). */
+function fold(text: string): string {
+  return text.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
+export type LibraryMatchField = 'title' | 'author' | 'notes';
+
+export interface LibraryMatch {
+  entry: LibraryEntry;
+  /** Where the query matched, best first — lets the UI say "matched in your notes". */
+  fields: LibraryMatchField[];
+}
+
+/**
+ * Searches the reader's own books by title, author and personal notes. Every word of the query
+ * must appear somewhere (AND), ignoring case and accents. Title matches rank first, then author,
+ * then notes-only matches; ties keep alphabetical order.
+ */
+export function searchLibrary(entries: LibraryEntry[], query: string): LibraryMatch[] {
+  const terms = fold(query).split(/\s+/).filter(Boolean);
+  if (terms.length === 0) return [];
+  const rank: Record<LibraryMatchField, number> = { title: 0, author: 1, notes: 2 };
+  const matches: LibraryMatch[] = [];
+  for (const entry of entries) {
+    const haystacks: Record<LibraryMatchField, string> = {
+      title: fold(entry.book.title),
+      author: fold(entry.book.authors.join(' ')),
+      notes: fold(entry.notes),
+    };
+    const all = `${haystacks.title} ${haystacks.author} ${haystacks.notes}`;
+    if (!terms.every((t) => all.includes(t))) continue;
+    const fields = (Object.keys(haystacks) as LibraryMatchField[]).filter((f) => terms.some((t) => haystacks[f].includes(t)));
+    matches.push({ entry, fields });
+  }
+  return matches.sort(
+    (a, b) => rank[a.fields[0]!] - rank[b.fields[0]!] || collator.compare(sortTitle(a.entry.book.title), sortTitle(b.entry.book.title)),
+  );
+}

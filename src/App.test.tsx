@@ -45,6 +45,44 @@ describe('guest experience', () => {
     expect(await screen.findByRole('heading', { name: /reading progress/i })).toBeInTheDocument();
   });
 
+  it('searches your own library from the "/" shortcut, including notes', async () => {
+    const user = userEvent.setup();
+    renderAt('/guest');
+    await screen.findByRole('heading', { level: 1, name: /a reader’s library/i });
+
+    await user.keyboard('/');
+    expect(await screen.findByRole('heading', { level: 1, name: /search your library/i })).toBeInTheDocument();
+    const input = screen.getByRole('searchbox', { name: /search your library/i });
+    expect(input).toHaveFocus();
+
+    // Author: both Le Guin books in the sample library.
+    await user.type(input, 'le guin');
+    let results = await screen.findByRole('list', { name: 'Search results' });
+    expect(within(results).getAllByRole('link')).toHaveLength(2);
+    expect(results).toHaveTextContent('The Left Hand of Darkness');
+    expect(results).toHaveTextContent('The Dispossessed');
+
+    // Every word must match: narrowing to one title.
+    await user.type(input, ' left');
+    results = await screen.findByRole('list', { name: 'Search results' });
+    expect(within(results).getAllByRole('link')).toHaveLength(1);
+
+    // Only in a personal note ("Kvothe’s voice carries everything…" on The Name of the Wind).
+    await user.clear(input);
+    await user.type(input, 'kvothe');
+    results = await screen.findByRole('list', { name: 'Search results' });
+    expect(results).toHaveTextContent('The Name of the Wind');
+    expect(screen.getByText(/matched only in your notes/i)).toBeInTheDocument();
+
+    // Nothing found: offer Open Library instead.
+    await user.clear(input);
+    await user.type(input, 'zzzz unknown');
+    expect(await screen.findByRole('link', { name: /search open library for “zzzz unknown”/i })).toHaveAttribute(
+      'href',
+      '/discover?q=zzzz%20unknown',
+    );
+  });
+
   it('protects library routes from signed-out visitors', async () => {
     renderAt('/library');
     expect(await screen.findByRole('heading', { name: /welcome back/i })).toBeInTheDocument();

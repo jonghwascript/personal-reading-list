@@ -1,0 +1,77 @@
+.header {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.form {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: calc(-1 * var(--space-6));
+}
+
+.inputWrap {
+  position: relative;
+}
+
+.inputIcon {
+  position: absolute;
+  top: 50%;
+  left: var(--space-4);
+  color: var(--color-text-tertiary);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.input {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0 calc(var(--space-4) + 2rem) 0 calc(var(--space-4) + 1.75rem);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: var(--text-base);
+  box-shadow: var(--shadow-sm);
+}
+
+.input:focus-visible {
+  border-color: var(--color-accent);
+  outline-offset: 1px;
+}
+
+.kbd,
+.kbdInline {
+  padding: 1px var(--space-2);
+  border: 1px solid var(--color-border);
+  border-bottom-width: 2px;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-tertiary);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.kbd {
+  position: absolute;
+  top: 50%;
+  right: var(--space-4);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+/* The hint is pointless once you're typing (and on touch devices with no keyboard). */
+.input:not(:placeholder-shown) ~ .kbd {
+  display: none;
+}
+
+@media (hover: none) {
+  .kbd {
+    display: none;
+  }
+}
+
+.hint,
+.count {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+}

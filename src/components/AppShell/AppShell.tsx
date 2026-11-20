@@ -7,6 +7,7 @@ import { useLibrary } from '../../state/LibraryContext';
 import { useSession } from '../../state/SessionContext';
 import { Logo } from '../Logo/Logo';
 import { ShelfDndProvider, useShelfDroppable } from '../ShelfDnd/ShelfDnd';
+import { LIBRARY_SEARCH_INPUT_ID } from '../../pages/LibrarySearchPage/searchInputId';
 import type { Shelf } from '../../types';
 import styles from './AppShell.module.css';
 
@@ -16,12 +17,19 @@ export function AppShell() {
   const location = useLocation();
   const mainRef = useRef<HTMLElement>(null);
   const firstRender = useRef(true);
+  const navigate = useNavigate();
 
   // On client-side navigation, move focus to the new page's heading so screen reader and keyboard
   // users land at the start of the new content (and hear its title).
   useEffect(() => {
     if (firstRender.current) {
       firstRender.current = false;
+      return;
+    }
+    // A page that deliberately focused a field (e.g. a search box) keeps it.
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && mainRef.current?.contains(active) && active.matches('input, textarea, select')) {
+      window.scrollTo({ top: 0 });
       return;
     }
     const heading = mainRef.current?.querySelector<HTMLElement>('h1');
@@ -31,6 +39,27 @@ export function AppShell() {
     }
     window.scrollTo({ top: 0 });
   }, [location.pathname]);
+
+  // "/" or Ctrl/Cmd+K jumps to library search from anywhere in the app (not while typing).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const typing = target?.closest('input, textarea, select, [contenteditable="true"]');
+      const slash = e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey && !typing;
+      const commandK = (e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'k';
+      if ((!slash && !commandK) || document.querySelector('dialog[open]')) return;
+      e.preventDefault();
+      const input = document.getElementById(LIBRARY_SEARCH_INPUT_ID) as HTMLInputElement | null;
+      if (input) {
+        input.focus();
+        input.select();
+      } else {
+        navigate('/library/search');
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [navigate]);
 
   return (
     <ShelfDndProvider>
@@ -64,9 +93,13 @@ function Sidebar() {
         <Logo />
       </Link>
 
-      <Link to="/discover" className={styles.searchLink}>
+      {/* Searches *your* books; finding new ones is "Discover" just below. */}
+      <Link to="/library/search" className={styles.searchLink} aria-keyshortcuts="/ Control+K Meta+K">
         <Search size={16} aria-hidden="true" />
-        <span>Find a book…</span>
+        <span>Search your library</span>
+        <kbd className={styles.searchKbd} aria-hidden="true">
+          /
+        </kbd>
       </Link>
 
       <nav aria-label="Main">
@@ -234,9 +267,9 @@ function MobileHeader() {
       <Link to="/library" className={styles.brand}>
         <Logo />
       </Link>
-      <Link to="/discover" className={styles.headerIcon}>
+      <Link to="/library/search" className={styles.headerIcon}>
         <Search size={22} aria-hidden="true" />
-        <span className="u-sr-only">Find a book</span>
+        <span className="u-sr-only">Search your library</span>
       </Link>
     </header>
   );
