@@ -7,6 +7,7 @@ import { useLibrary } from '../../state/LibraryContext';
 import { useSession } from '../../state/SessionContext';
 import { Logo } from '../Logo/Logo';
 import { ShelfDndProvider, useShelfDroppable } from '../ShelfDnd/ShelfDnd';
+import { ThemeSwitcher } from '../ThemeSwitcher/ThemeSwitcher';
 import { LIBRARY_SEARCH_INPUT_ID } from '../../pages/LibrarySearchPage/searchInputId';
 import type { Shelf } from '../../types';
 import styles from './AppShell.module.css';
@@ -140,6 +141,9 @@ function Sidebar() {
       </nav>
 
       <div className={styles.account}>
+        <div className={styles.theme}>
+          <ThemeSwitcher compact />
+        </div>
         {status === 'guest' ? (
           <>
             <p className={styles.accountNote}>

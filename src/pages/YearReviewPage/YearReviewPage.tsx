@@ -13,6 +13,7 @@ import { useLibrary } from '../../state/LibraryContext';
 import type { LibraryEntry } from '../../types';
 import styles from './YearReviewPage.module.css';
 import { useReviewMotion } from './useReviewMotion';
+import { isDarkThemeActive } from '../../lib/theme';
 
 /**
  * Design challenge #1. Starts from the books themselves — covers and one sentence — so a reader
@@ -179,7 +180,7 @@ function SharePanel({ review }: { review: YearReview }) {
       isCurrentYear: review.isCurrentYear,
       asOf: review.asOf,
       books: chosen.map((e) => e.book),
-      theme: window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+      theme: isDarkThemeActive() ? 'dark' : 'light',
     }).finally(() => {
       if (!cancelled) setRendering(false);
     });

@@ -1,5 +1,6 @@
 import { LogOut, RotateCcw, UserRound } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { ThemeSwitcher } from '../../components/ThemeSwitcher/ThemeSwitcher';
 import { Button, ButtonLink } from '../../components/ui/Button';
 import { GuestRepository } from '../../data/guestRepository';
 import { usePageTitle } from '../../lib/usePageTitle';
@@ -87,6 +88,14 @@ export function AccountPage() {
           </div>
         </div>
       )}
+
+      <section className={styles.card} aria-labelledby="appearance-heading">
+        <h2 id="appearance-heading" className={styles.cardTitle}>
+          Appearance
+        </h2>
+        <ThemeSwitcher />
+        <p className={styles.note}>“System” follows your device’s light or dark setting. Your choice is remembered on this device.</p>
+      </section>
     </div>
   );
 }

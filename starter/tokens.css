@@ -91,8 +91,13 @@
   --page-max-width: 80rem;
 }
 
+/*
+ * Dark palette. Follows the system setting unless the reader picked a theme, which the app records
+ * as data-theme on <html> ("light" or "dark"). The same declarations appear twice — the contrast
+ * test checks they stay identical.
+ */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     /* Deep teal night; the original teal and pink become the bright accents. */
     --color-bg-primary: #142120;
     --color-bg-secondary: #1a2b2a;
@@ -121,4 +126,34 @@
     --shadow-lg: 0 12px 20px -4px rgba(0, 0, 0, 0.5), 0 4px 8px -4px rgba(0, 0, 0, 0.3);
     --shadow-book: 0 2px 8px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.3);
   }
+}
+
+:root[data-theme='dark'] {
+  /* Deep teal night; the original teal and pink become the bright accents. */
+  --color-bg-primary: #142120;
+  --color-bg-secondary: #1a2b2a;
+  --color-bg-tertiary: #233736;
+  --color-surface: #1a2b2a;
+  --color-border: #34504d;
+  --color-border-subtle: #233736;
+
+  --color-text-primary: #ecf5f3;
+  --color-text-secondary: #afc4c0;
+  --color-text-tertiary: #8aa5a1;
+
+  --color-accent: #61c0bf;
+  --color-accent-hover: #86d2d1;
+  --color-accent-subtle: #1f3a39;
+
+  --color-success: #6fcb9c;
+  --color-warning: #e9b95c;
+  --color-error: #ff8e99;
+
+  --color-progress: #61c0bf;
+  --color-rating: #ffb6b9;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 8px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 12px 20px -4px rgba(0, 0, 0, 0.5), 0 4px 8px -4px rgba(0, 0, 0, 0.3);
+  --shadow-book: 0 2px 8px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.3);
 }

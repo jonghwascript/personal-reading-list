@@ -18,9 +18,22 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --color-on-accent: #0f1e1d;
   }
+}
+
+:root[data-theme='dark'] {
+  --color-on-accent: #0f1e1d;
+}
+
+/* A chosen theme also switches native UI (form controls, scrollbars) to match. */
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
 }
 
 /* ----------------------------------------------------------------------------

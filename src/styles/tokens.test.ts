@@ -14,7 +14,15 @@ function tokens(block: string): Record<string, string> {
 }
 
 const light = tokens(css.slice(0, darkStart));
-const dark = { ...light, ...tokens(css.slice(darkStart)) };
+const chosenDarkStart = css.indexOf(":root[data-theme='dark']");
+const systemDark = tokens(css.slice(darkStart, chosenDarkStart));
+const chosenDark = tokens(css.slice(chosenDarkStart));
+const dark = { ...light, ...systemDark };
+
+it('applies the same dark palette for the system setting and for a chosen dark theme', () => {
+  expect(Object.keys(systemDark).length).toBeGreaterThan(10);
+  expect(chosenDark).toEqual(systemDark);
+});
 
 function luminance(hex: string): number {
   const [r, g, b] = [1, 3, 5].map((i) => {

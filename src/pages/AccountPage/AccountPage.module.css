@@ -8,6 +8,15 @@
   background: var(--color-surface);
 }
 
+.cardTitle {
+  font-size: var(--text-lg);
+}
+
+.note {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+}
+
 .actions {
   display: flex;
   flex-wrap: wrap;
