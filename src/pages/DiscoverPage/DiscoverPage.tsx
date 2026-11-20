@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { AddBook } from '../../components/AddBook/AddBook';
 import { BookCover } from '../../components/BookCover/BookCover';
 import { CuratedLists, Recommendations } from '../../components/Discovery/Discovery';
+import { TiltCover } from '../../components/TiltCover/TiltCover';
 import { EmptyState } from '../../components/EmptyState/EmptyState';
 import { Button } from '../../components/ui/Button';
 import { formatAuthors, pluralize } from '../../lib/format';
@@ -224,7 +225,8 @@ export function DiscoverPage() {
 
 function SearchResultItem({ book, editionCount, priority }: { book: Book; editionCount: number; priority: boolean }) {
   const meta = [
-    book.publishedYear && `First published ${book.publishedYear}`,
+    // Short enough for a 145px card: "1965 · ≈ 412 pages · 36 editions".
+    book.publishedYear && String(book.publishedYear),
     book.pageCount && `≈ ${book.pageCount} pages`,
     editionCount > 1 && `${editionCount} editions`,
   ].filter(Boolean);
@@ -232,7 +234,9 @@ function SearchResultItem({ book, editionCount, priority }: { book: Book; editio
   return (
     <li className={styles.result}>
       <div className={styles.resultCover}>
-        <BookCover book={book} size="M" priority={priority} />
+        <TiltCover>
+          <BookCover book={book} size="M" priority={priority} />
+        </TiltCover>
       </div>
       <div className={styles.resultBody}>
         <h3 className={styles.resultTitle}>{book.title}</h3>

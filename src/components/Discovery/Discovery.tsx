@@ -9,6 +9,7 @@ import { useLibrary } from '../../state/LibraryContext';
 import type { Book } from '../../types';
 import { AddBook } from '../AddBook/AddBook';
 import { BookCover } from '../BookCover/BookCover';
+import { TiltCover } from '../TiltCover/TiltCover';
 import { Button } from '../ui/Button';
 import styles from './Discovery.module.css';
 
@@ -164,7 +165,9 @@ function Tile({ book, editionCount }: { book: Book; editionCount: number }) {
   return (
     <li className={styles.tile} data-expanded={expanded}>
       <div className={styles.tileCover}>
-        <BookCover book={book} size="M" />
+        <TiltCover>
+          <BookCover book={book} size="M" />
+        </TiltCover>
       </div>
       <div className={styles.tileBody}>
         <h3 className={styles.tileTitle}>{book.title}</h3>
