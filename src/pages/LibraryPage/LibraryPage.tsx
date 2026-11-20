@@ -1,7 +1,7 @@
 import { ArrowRight, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { BookCover } from '../../components/BookCover/BookCover';
+import { BookCover, toneFor } from '../../components/BookCover/BookCover';
 import { BookGrid } from '../../components/BookGrid/BookGrid';
 import { CuratedLists, StartSearch } from '../../components/Discovery/Discovery';
 import { EmptyState } from '../../components/EmptyState/EmptyState';
@@ -10,6 +10,7 @@ import { ProgressLogger } from '../../components/ProgressLogger/ProgressLogger';
 import { useBookDraggable, useShelfDroppable } from '../../components/ShelfDnd/ShelfDnd';
 import { Button } from '../../components/ui/Button';
 import { formatAuthors, pluralize } from '../../lib/format';
+import { useCoverTint } from '../../lib/coverTint';
 import { booksFinishedInYear } from '../../lib/goal';
 import { authorsIn, filterEntries, genresIn, sortEntries, type EntryFilter } from '../../lib/libraryRules';
 import { openWithCoverTransition, useFlipGrid } from '../../lib/motion';
@@ -198,19 +199,34 @@ function ReadingSection({ entries, shelfId }: { entries: LibraryEntry[]; shelfId
       </div>
       <ul role="list" className={styles.readingList}>
         {entries.map((entry, i) => (
-          <li key={entry.id} className={styles.readingCard}>
-            <DraggableCover entry={entry} priority={i < 3} />
-            <div className={styles.readingBody}>
-              <h3 className={styles.readingTitle}>
-                <Link to={`/books/${entry.id}`}>{entry.book.title}</Link>
-              </h3>
-              <p className={styles.readingAuthor}>{formatAuthors(entry.book.authors) || 'Unknown author'}</p>
-              <ProgressLogger entry={entry} variant="card" />
-            </div>
-          </li>
+          <ReadingCard key={entry.id} entry={entry} priority={i < 3} />
         ))}
       </ul>
     </DropSection>
+  );
+}
+
+/**
+ * A book in progress: a band dyed with its cover's own colour (deepened so cream text stays ≥ 7:1)
+ * holds the cover and title; below it, one big ring says how far along you are.
+ */
+function ReadingCard({ entry, priority }: { entry: LibraryEntry; priority: boolean }) {
+  const tint = useCoverTint(entry.book.coverUrl, toneFor(entry.book.title));
+  return (
+    <li className={styles.readingCard} style={{ '--tint': tint } as React.CSSProperties}>
+      <div className={styles.readingBand}>
+        <DraggableCover entry={entry} priority={priority} />
+        <div className={styles.readingHead}>
+          <h3 className={styles.readingTitle}>
+            <Link to={`/books/${entry.id}`}>{entry.book.title}</Link>
+          </h3>
+          <p className={styles.readingAuthor}>{formatAuthors(entry.book.authors) || 'Unknown author'}</p>
+        </div>
+      </div>
+      <div className={styles.readingBody}>
+        <ProgressLogger entry={entry} variant="card" />
+      </div>
+    </li>
   );
 }
 

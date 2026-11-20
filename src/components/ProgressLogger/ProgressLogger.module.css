@@ -190,3 +190,20 @@
 .finishPrompt svg {
   color: var(--color-success);
 }
+
+/* Card variant: ring on the left, position and time left stacked beside it. */
+.dial {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.dial .readout {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.dial .position {
+  font-family: var(--font-heading);
+  font-size: var(--text-base);
+}

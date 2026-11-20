@@ -9,6 +9,7 @@ import { useLibrary } from '../../state/LibraryContext';
 import type { LibraryEntry } from '../../types';
 import { Button } from '../ui/Button';
 import { ProgressBar } from '../ui/ProgressBar';
+import { ProgressRing } from '../ui/ProgressRing';
 import styles from './ProgressLogger.module.css';
 
 interface ProgressLoggerProps {
@@ -90,19 +91,41 @@ export function ProgressLogger({ entry, variant = 'card' }: ProgressLoggerProps)
     { at: 90, label: '90%' },
   ];
 
+  // E-books already describe their position as a percentage; don't read it out twice.
+  const position = describePosition(entry);
+  const valueText = percent === null || position.endsWith('%') ? position : `${position}, ${Math.round(percent)}%`;
+
+  const readout = (
+    <div className={styles.readout}>
+      <p className={styles.position}>{describePosition(entry)}</p>
+      {remaining && <p className={styles.remaining}>{remaining}</p>}
+    </div>
+  );
+
   return (
     <div className={`${styles.logger} ${styles[variant]}`}>
-      <div className={styles.readout}>
-        <p className={styles.position}>{describePosition(entry)}</p>
-        {remaining && <p className={styles.remaining}>{remaining}</p>}
-      </div>
+      {variant === 'card' && percent !== null ? (
+        // Dashboard card: one big number — the ring — beside where you are and what's left.
+        <div className={styles.dial}>
+          <ProgressRing
+            value={percent}
+            marks={[50]}
+            label={`Progress in ${entry.book.title}`}
+            valueText={valueText}
+            tone={percent >= 100 ? 'success' : 'progress'}
+          />
+          {readout}
+        </div>
+      ) : (
+        readout
+      )}
 
-      {percent !== null ? (
+      {variant === 'card' && percent !== null ? null : percent !== null ? (
         <ProgressBar
           value={percent}
           marks={marks}
           label={`Progress in ${entry.book.title}`}
-          valueText={`${describePosition(entry)}, ${Math.round(percent)}%`}
+          valueText={valueText}
           tone={percent >= 100 ? 'success' : 'progress'}
           size={variant === 'card' ? 'sm' : 'md'}
         />
