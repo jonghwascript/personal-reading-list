@@ -4,7 +4,9 @@
 :root {
   --color-focus: var(--color-accent);
   --color-on-accent: #ffffff;
-  --cover-ratio: 2 / 3;
+  /* Library grid covers are 145 × 214 px; every cover in the app shares this portrait ratio. */
+  --cover-width: 9.0625rem; /* 145px at the default 16px root size */
+  --cover-ratio: 145 / 214;
   --header-height: 3.5rem;
   --bottom-nav-height: 4rem;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);

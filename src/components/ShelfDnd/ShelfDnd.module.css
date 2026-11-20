@@ -1,7 +1,8 @@
 /* The book in hand: lifted off the shelf and tilted, like holding a real book. */
 .preview {
   position: relative;
-  width: 8.5rem;
+  /* Same size as the grid cover it was picked up from. */
+  width: var(--cover-width);
   cursor: grabbing;
 }
 

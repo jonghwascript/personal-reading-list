@@ -1,11 +1,22 @@
-/* Fluid columns: content (cover width) decides the breakpoints, not device sizes. */
+/*
+ * Fixed 145 × 214 px covers: wider screens get more columns, never bigger covers, so every shelf
+ * keeps the same rhythm. In rem, so covers still grow with the user's font-size setting.
+ */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(clamp(7.5rem, 22vw, 10rem), 1fr));
+  grid-template-columns: repeat(auto-fill, var(--cover-width));
   gap: var(--space-8) var(--space-5);
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+/* Phones too narrow for two 145px covers (< 352px): two slightly smaller columns beat one. */
+@media (max-width: 22em) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--space-3);
+  }
 }
 
 .skeleton {
