@@ -1,4 +1,4 @@
-.switcher {
+.group {
   min-width: 0;
   margin: 0;
   padding: 0;
@@ -60,4 +60,8 @@
 
 .compact .segment {
   min-height: 2rem;
+}
+
+.segment {
+  text-align: center;
 }

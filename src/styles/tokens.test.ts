@@ -58,3 +58,35 @@ describe.each([
     expect(contrast(p['color-rating']!, p['color-surface']!)).toBeGreaterThanOrEqual(3);
   });
 });
+
+/*
+ * High-contrast mode (src/styles/preferences.css) must reach WCAG AAA: 7:1 for text in both modes.
+ */
+describe('high contrast (AAA)', () => {
+  const prefsCss = readFileSync(resolve(__dirname, './preferences.css'), 'utf8');
+  const block = (selector: string) => {
+    const start = prefsCss.indexOf(selector);
+    return tokens(prefsCss.slice(start, prefsCss.indexOf('}', start)));
+  };
+  const hcLight = { ...light, ...block(":root[data-contrast='more'] {") };
+  const hcDarkSystem = block(":root[data-contrast='more']:not([data-theme='light']) {");
+  const hcDarkChosen = block(":root[data-contrast='more'][data-theme='dark'] {");
+  const hcDark = { ...dark, ...hcDarkChosen };
+
+  it('uses identical dark values for the system and the chosen dark theme', () => {
+    expect(Object.keys(hcDarkChosen).length).toBeGreaterThan(8);
+    expect(hcDarkSystem).toEqual(hcDarkChosen);
+  });
+
+  it.each([
+    ['light', hcLight, '#ffffff'],
+    ['dark', hcDark, '#0f1e1d'],
+  ])('%s: every text token ≥ 7:1, labels ≥ 7:1, borders and marks ≥ 3:1', (_mode, p, onAccent) => {
+    for (const text of TEXT) for (const bg of BACKGROUNDS) expect(contrast(p[text]!, p[bg]!), `${text} on ${bg}`).toBeGreaterThanOrEqual(7);
+    expect(contrast(onAccent as string, p['color-accent']!)).toBeGreaterThanOrEqual(7);
+    expect(contrast(onAccent as string, p['color-accent-hover']!)).toBeGreaterThanOrEqual(7);
+    expect(contrast(p['color-border']!, p['color-bg-primary']!)).toBeGreaterThanOrEqual(3);
+    expect(contrast(p['color-progress']!, p['color-bg-tertiary']!)).toBeGreaterThanOrEqual(3);
+    expect(contrast(p['color-rating']!, p['color-surface']!)).toBeGreaterThanOrEqual(3);
+  });
+});

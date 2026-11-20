@@ -1,6 +1,7 @@
 import { LogOut, RotateCcw, UserRound } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { ThemeSwitcher } from '../../components/ThemeSwitcher/ThemeSwitcher';
+import { useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { ReadingSettings } from '../../components/ReadingSettings/ReadingSettings';
 import { Button, ButtonLink } from '../../components/ui/Button';
 import { GuestRepository } from '../../data/guestRepository';
 import { usePageTitle } from '../../lib/usePageTitle';
@@ -17,6 +18,11 @@ export function AccountPage() {
   const { reload } = useLibrary();
   const { notify } = useAnnouncer();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.hash === '#appearance') document.getElementById('appearance')?.scrollIntoView({ block: 'start' });
+  }, [location.hash]);
 
   return (
     <div className={page.page}>
@@ -89,12 +95,11 @@ export function AccountPage() {
         </div>
       )}
 
-      <section className={styles.card} aria-labelledby="appearance-heading">
+      <section className={styles.card} aria-labelledby="appearance-heading" id="appearance">
         <h2 id="appearance-heading" className={styles.cardTitle}>
-          Appearance
+          Appearance &amp; reading
         </h2>
-        <ThemeSwitcher />
-        <p className={styles.note}>“System” follows your device’s light or dark setting. Your choice is remembered on this device.</p>
+        <ReadingSettings />
       </section>
     </div>
   );

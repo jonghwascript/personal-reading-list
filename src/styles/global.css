@@ -1,5 +1,7 @@
 /* Brand tokens come straight from the starter so the challenge's source of truth stays single. */
 @import '../../starter/tokens.css';
+/* Reader preferences (text size, spacing, font, high contrast) override tokens; keep after them. */
+@import './preferences.css';
 
 :root {
   --color-focus: var(--color-accent);

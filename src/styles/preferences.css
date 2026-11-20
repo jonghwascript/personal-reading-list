@@ -1,0 +1,113 @@
+/*
+ * Reading & accessibility preferences, applied as data-* attributes on <html>
+ * (src/lib/preferences.ts; also set before first paint by the inline script in index.html).
+ */
+
+/* ---------------------------------------------------------------- Text size
+ * Everything is sized in rem, so scaling the root scales the whole interface, covers included. */
+:root[data-text='large'] {
+  font-size: 112.5%;
+}
+
+:root[data-text='larger'] {
+  font-size: 125%;
+}
+
+/* ---------------------------------------------------------------- Line & letter spacing
+ * Roughly the WCAG 1.4.12 text-spacing targets: ≥1.5 line height, a little extra letter and word
+ * spacing. Book descriptions and notes get the most room. */
+:root[data-spacing='relaxed'] {
+  --leading-tight: 1.35;
+  --leading-snug: 1.45;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.6;
+  --leading-loose: 1.7;
+  --leading-prose: 1.9;
+}
+
+:root[data-spacing='relaxed'] body {
+  letter-spacing: 0.02em;
+  word-spacing: 0.08em;
+}
+
+/* ---------------------------------------------------------------- Dyslexia-friendly font
+ * OpenDyslexic (SIL OFL), loaded on demand. Weighted letter bottoms help some dyslexic readers keep
+ * letters from flipping; it replaces both the serif and the sans. */
+:root[data-font='dyslexic'] {
+  --font-heading: 'OpenDyslexic', 'Comic Sans MS', system-ui, sans-serif;
+  --font-sans: 'OpenDyslexic', 'Comic Sans MS', system-ui, sans-serif;
+  --font-serif: 'OpenDyslexic', 'Comic Sans MS', system-ui, sans-serif;
+}
+
+/* ---------------------------------------------------------------- High contrast (WCAG AAA)
+ * Text tokens reach ≥ 7:1 on every background token, borders ≥ 3:1 (checked by tokens.test.ts).
+ * Light high contrast applies by default; the dark rules below are more specific, so they win
+ * whenever the dark palette is active (system dark, or a chosen dark theme). */
+:root[data-contrast='more'] {
+  --color-border: #7d6e67;
+  --color-border-subtle: #b9a79e;
+
+  --color-text-primary: #0b1716;
+  --color-text-secondary: #1b2c2b;
+  --color-text-tertiary: #2a3d3c;
+
+  --color-accent: #0b4746;
+  --color-accent-hover: #062f2e;
+
+  --color-success: #134a2d;
+  --color-warning: #4a3400;
+  --color-error: #771b27;
+
+  --color-progress: #0f5c5b;
+  --color-rating: #a33a4d;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-contrast='more']:not([data-theme='light']) {
+    --color-border: #7f9e9a;
+    --color-border-subtle: #4d6966;
+
+    --color-text-primary: #ffffff;
+    --color-text-secondary: #e6f1ef;
+    --color-text-tertiary: #c4d6d3;
+
+    --color-accent: #9ce3e2;
+    --color-accent-hover: #c4f0ef;
+
+    --color-success: #a8ecc4;
+    --color-warning: #f7d58c;
+    --color-error: #ffc2c9;
+
+    --color-progress: #9ce3e2;
+    --color-rating: #ffd0d2;
+  }
+}
+
+:root[data-contrast='more'][data-theme='dark'] {
+  --color-border: #7f9e9a;
+  --color-border-subtle: #4d6966;
+
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #e6f1ef;
+  --color-text-tertiary: #c4d6d3;
+
+  --color-accent: #9ce3e2;
+  --color-accent-hover: #c4f0ef;
+
+  --color-success: #a8ecc4;
+  --color-warning: #f7d58c;
+  --color-error: #ffc2c9;
+
+  --color-progress: #9ce3e2;
+  --color-rating: #ffd0d2;
+}
+
+/* Text links are always underlined and focus rings are heavier in high contrast. (Styled links —
+   buttons, cards, nav items — carry a class and keep their own look.) */
+:root[data-contrast='more'] a:not([class]) {
+  text-decoration-line: underline;
+}
+
+:root[data-contrast='more'] :focus-visible {
+  outline-width: 3px;
+}

@@ -5,11 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Bookshelf — your reading life, beautifully organized. Track books, shelves, progress, and reading goals." />
     <meta name="color-scheme" content="light dark" />
-    <!-- Apply a stored theme choice before first paint, so a dark-mode pick never flashes light. -->
+    <!-- Apply stored theme and reading preferences before first paint, so nothing flashes. -->
     <script>
       try {
+        var root = document.documentElement;
         var t = localStorage.getItem('bookshelf:theme');
-        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+        if (t === 'light' || t === 'dark') root.dataset.theme = t;
+        // Reading preferences (see src/lib/preferences.ts): same attributes, before first paint.
+        var p = JSON.parse(localStorage.getItem('bookshelf:reading') || '{}');
+        var more = p.contrast === 'more' || (p.contrast !== 'standard' && matchMedia('(prefers-contrast: more)').matches);
+        if (more) root.dataset.contrast = 'more';
+        if (p.textSize === 'large' || p.textSize === 'larger') root.dataset.text = p.textSize;
+        if (p.spacing === 'relaxed') root.dataset.spacing = 'relaxed';
+        if (p.font === 'dyslexic') root.dataset.font = 'dyslexic';
       } catch (e) {}
     </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
