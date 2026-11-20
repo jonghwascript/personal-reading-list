@@ -143,6 +143,11 @@ function Sidebar() {
       <div className={styles.account}>
         <div className={styles.theme}>
           <ThemeSwitcher compact />
+          <p className={styles.themeLinks}>
+            <Link to="/account#appearance">Reading settings</Link>
+            {' · '}
+            <Link to="/accessibility">Accessibility</Link>
+          </p>
         </div>
         {status === 'guest' ? (
           <>

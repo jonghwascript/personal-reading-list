@@ -54,6 +54,7 @@ export function StarRating({ value, onChange, label = 'Your rating' }: StarRatin
       </div>
       <p className={styles.caption} aria-hidden="true">
         {value ? LABELS[value] : 'Not rated yet'}
+        <span className={styles.keyHint}> · keys 1–5, 0 clears</span>
       </p>
     </fieldset>
   );

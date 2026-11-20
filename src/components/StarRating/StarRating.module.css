@@ -79,6 +79,17 @@
   outline-offset: 1px;
 }
 
+/* Keyboard hint only where a keyboard is likely. */
+.keyHint {
+  display: none;
+}
+
+@media (hover: hover) {
+  .keyHint {
+    display: inline;
+  }
+}
+
 .caption {
   min-height: 1.45em;
   margin-top: var(--space-1);

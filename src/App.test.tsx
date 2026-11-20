@@ -83,6 +83,36 @@ describe('guest experience', () => {
     );
   });
 
+  it('rates the open book with number keys and moves between books with arrow keys', async () => {
+    const user = userEvent.setup();
+    renderAt('/guest');
+    await screen.findByRole('heading', { level: 1, name: /a reader’s library/i });
+
+    // Arrow keys: from the first book on a shelf to the next one.
+    const want = screen.getByRole('list', { name: 'Want to Read' });
+    const [first, second] = within(want).getAllByRole('link');
+    first!.focus();
+    await user.keyboard('{ArrowRight}');
+    expect(second).toHaveFocus();
+    await user.keyboard('{Home}');
+    expect(first).toHaveFocus();
+
+    // Number keys on a book page.
+    await user.keyboard('{Enter}');
+    await screen.findByRole('radio', { name: /1 star/i });
+    await user.keyboard('4');
+    expect(screen.getByRole('radio', { name: /4 stars/i })).toBeChecked();
+    await user.keyboard('0');
+    expect(screen.getByRole('radio', { name: /4 stars/i })).not.toBeChecked();
+  });
+
+  it('publishes an accessibility statement, reachable without signing in', async () => {
+    renderAt('/accessibility');
+    expect(await screen.findByRole('heading', { level: 1, name: /books are for everyone/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /known gaps/i })).toBeInTheDocument();
+    expect(screen.getByRole('table', { name: /keyboard shortcuts/i })).toBeInTheDocument();
+  });
+
   it('protects library routes from signed-out visitors', async () => {
     renderAt('/library');
     expect(await screen.findByRole('heading', { name: /welcome back/i })).toBeInTheDocument();

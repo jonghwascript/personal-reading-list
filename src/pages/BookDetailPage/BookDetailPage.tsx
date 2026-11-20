@@ -31,6 +31,23 @@ export function BookDetailPage() {
 function BookDetail({ entry }: { entry: LibraryEntry }) {
   const { shelves, shelfById, moveEntries, updateEntry, removeEntries } = useLibrary();
   const { notify, announce } = useAnnouncer();
+
+  // Number keys rate the book you're looking at: 1–5 sets the stars, 0 clears them.
+  // Never while typing, with a modifier held, or behind an open dialog.
+  useEffect(() => {
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+      if (!/^[0-5]$/.test(e.key)) return;
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('input, textarea, select, [contenteditable="true"]') || document.querySelector('dialog[open]')) return;
+      const rating = Number(e.key) || null;
+      if (rating === entry.rating) return;
+      e.preventDefault();
+      void updateEntry(entry.id, { rating }).then(() => announce(rating ? `Rated ${rating} out of 5.` : 'Rating cleared.'));
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [entry.id, entry.rating, updateEntry, announce]);
   const navigate = useNavigate();
   const { book } = entry;
   const shelf = shelfById(entry.shelfId);

@@ -1,6 +1,6 @@
 import { ArrowRight, BookMarked, ChartNoAxesColumn, Search, Target } from 'lucide-react';
 import { useRef, type PointerEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import sampleBooks from '../../../data/sample-books.json';
 import { BookCover } from '../../components/BookCover/BookCover';
 import { Logo } from '../../components/Logo/Logo';
@@ -228,7 +228,7 @@ export function LandingPage() {
       <footer className={styles.footer}>
         <p>
           Book data from <a href="https://openlibrary.org">Open Library</a>. Built for the Frontend Mentor product
-          challenge.
+          challenge. <Link to="/accessibility">Accessibility statement</Link>.
         </p>
       </footer>
     </div>

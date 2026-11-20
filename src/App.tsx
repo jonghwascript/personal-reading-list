@@ -20,6 +20,7 @@ const ShelfPage = named(() => import('./pages/ShelfPage/ShelfPage'), 'ShelfPage'
 const BookDetailPage = named(() => import('./pages/BookDetailPage/BookDetailPage'), 'BookDetailPage');
 const YearReviewPage = named(() => import('./pages/YearReviewPage/YearReviewPage'), 'YearReviewPage');
 const AccountPage = named(() => import('./pages/AccountPage/AccountPage'), 'AccountPage');
+const AccessibilityPage = named(() => import('./pages/AccessibilityPage/AccessibilityPage'), 'AccessibilityPage');
 const LibrarySearchPage = named(() => import('./pages/LibrarySearchPage/LibrarySearchPage'), 'LibrarySearchPage');
 const SignInPage = named(() => import('./pages/AuthPages/AuthPages'), 'SignInPage');
 const SignUpPage = named(() => import('./pages/AuthPages/AuthPages'), 'SignUpPage');
@@ -40,6 +41,7 @@ export function App() {
             <Route path="/signup" element={<SignUpPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/accessibility" element={<AccessibilityPage />} />
             <Route
               element={
                 <RequireLibrary>
