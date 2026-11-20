@@ -1,160 +1,289 @@
-# Bookshelf — Product Challenge
+# Bookshelf — jonghwascript
 
-Build a personal reading tracker where you search for books, organize them into shelves, track reading progress, set goals, and explore year-in-review statistics. Your reading life, beautifully organized.
+A personal reading tracker where you search for books, organize them into shelves, track reading progress, and explore year-in-review statistics. Your reading life, beautifully organized.
 
-![Bookshelf preview](./preview.jpg)
+| | |
+|---|---|
+| **Live site** | https://jonghwascript.github.io/personal-reading-list/ — guest library: https://jonghwascript.github.io/personal-reading-list/guest |
+| **Repository** | https://github.com/jonghwascript/personal-reading-list |
+| **Challenge** | [Personal reading list (Bookshelf) — Frontend Mentor Product Challenge](https://www.frontendmentor.io/challenges/personal-reading-list) |
+| **Author** | [github.com/jonghwascript](https://github.com/jonghwascript) |
 
-*This is a design concept image, not the intended design. There's no Figma file — you make the design decisions.*
+![Bookshelf landing page: "Your reading life, beautifully organized." beside a collage of book covers](./screenshot.jpg)
 
-## The Challenge
+---
 
-Bookshelf is a **Product Challenge** on [Frontend Mentor](https://www.frontendmentor.io). There's no Figma file — you make the design decisions. You ship a real, deployed product with a database, authentication, and external integrations. The result is a portfolio piece that demonstrates how you think, not just what you can build.
+## Overview
 
-### Four Pillars
+Bookshelf is a full-stack React app. Visitors can open a fully stocked **guest library** in one click — 45 real books across five genres, spread over shelves with progress, ratings, notes and a reading goal — or sign up to keep a library of their own in Supabase.
 
-| Pillar | What It Means for Bookshelf |
-|--------|----------------------------|
-| **Product Thinking** | You design the year-in-review experience, the book discovery flow, and the reading progress UX. No spec tells you exactly how — you decide. |
-| **Design Taste & Craft** | The brand kit gives you colors, type, and spacing. The layouts, interactions, and visual polish are yours. |
-| **AI Collaboration** | The project includes AI context files (`AGENTS.md`, `CLAUDE.md`) that give tools like Claude full project context. Lean into AI across planning, building, and polishing. |
-| **Shipping Real Products** | Deploy to a live URL. Real database. Real auth. Real book API integration with real-world data inconsistencies — missing covers, varied ISBNs, duplicate editions. |
+What you can do:
 
-## What You're Building
+- **Find books** on Open Library by title, author or ISBN, with edition-aware duplicate detection ("In your library") and an edition picker when a work has several editions.
+- **Organize** books on three default shelves plus your own; drag books between shelves (mouse, touch or keyboard), reorder shelves, sort and filter with animated re-layout.
+- **Track progress** in pages, percent (e-books) or listening time (audiobooks), straight from the dashboard, with undo and an explicit "Mark as finished".
+- **Set a yearly goal** and see whether you're ahead, on track or behind.
+- **Look back** on any year with the year in review, and share it as an image.
 
-A personal reading tracker where users:
+### Tech Stack
 
-- **Search for books** via the Open Library or Google Books API and add them to their library
-- **Organize into shelves** — "Want to Read", "Currently Reading", "Read", plus custom shelves
-- **Track reading progress** with page counts and visual progress indicators
-- **Set annual reading goals** and see whether they're on pace
-- **Explore year-in-review statistics** — books per month, genre breakdown, total pages, reading pace
-- **Browse a curated library** as a guest with 45 real books across 5 genres
+| Layer | Technology |
+|-------|-----------|
+| Framework | React 19 + TypeScript, Vite 8, React Router 7 |
+| Database | Supabase Postgres with row-level security (migrations in `supabase/migrations`) |
+| Authentication | Supabase Auth — email + password, password reset; guest mode in `sessionStorage` |
+| Book API | Open Library (search, works, editions, covers) — throttled to 1 req/s, cached |
+| Hosting | GitHub Pages via GitHub Actions (`.github/workflows/deploy-pages.yml`); `vercel.json` also included |
+| Styling | CSS Modules + design tokens (`starter/tokens.css`) |
+| Charts/Viz | Hand-built CSS/SVG charts; Canvas API for the shareable year card |
+| Other | GSAP (Flip, ScrollTrigger), @dnd-kit/core, lucide-react, Vitest + Testing Library |
 
-### The Guest Experience
+---
 
-When you share this project — in your portfolio, a job application, or a social post — the person clicking your link isn't going to create an account. Guest mode is what lets them see your work instead of a login wall.
+## Design Decisions
 
-Your landing page includes a "Try as Guest" button. Guests get a fully populated library with 45 curated books across Fiction, Non-Fiction, Sci-Fi & Fantasy, Self-Improvement, and Tech & Programming — real covers, real metadata, books distributed across shelves with reading progress, ratings, and notes. The year-in-review statistics are pre-populated with compelling data. Visitors are _exploring a personal reading library_ from their first click.
+These are the product and design choices I made where the spec left room for interpretation.
 
-## Project Structure
+I designed the three features in the order a reader meets them: **discovery** fills the library, **progress tracking** gives a reason to come back while reading, and the **year in review** makes the accumulated record worth revisiting. Deciding *what progress data to store* first also decided what story the review could honestly tell.
 
+| Feature | Direction | Trade-off I accepted |
+|---|---|---|
+| Year in review | A dedicated page that opens on covers and one sentence; monthly chart and the full list below | Fewer headline metrics, but a reader with 3 books still gets *their* story |
+| Discovery | Search + curated lists on an empty library; explainable "same genre as…" suggestions once there's history | Early suggestions aren't deeply personal, but nobody fills in a taste quiz before adding a first book |
+| Progress | Log the last position straight from the dashboard card | Fast to enter, but log timestamps can't tell real reading time or speed |
+
+### Year-in-Review & Reading Insights
+
+**The problem I was solving:** Raw totals flatter heavy readers and embarrass light ones. A page of zero-filled charts in March is a bad moment.
+
+**My approach:** `/review` starts with the books themselves. Up to six finished books are *all* the heroes — large covers, each labelled with the month it was finished, under a sentence like "You finished these three books so far this year." Beyond six, it shows a fan of highlights (highest-rated first) and names the standout month ("March was your biggest month…"). Below: a month-by-month chart (with a screen-reader table), then genre and page totals, then every book in finishing order.
+- The current year is labelled **"2026 so far · as of November 20"**; past years **"Your 2025 in books"**.
+- Genres appear only when ≥ 3 finished books have genre data; the page total only when ≥ 70% of books have a known length (and says how many it's based on). A half-known number would mislead.
+- A year with nothing finished shows no charts — it links back to the book you're reading instead.
+- Sharing produces a 1080×1080 image. You **preview it and tick exactly which covers appear** before downloading; no ratings or notes are included.
+- As you scroll, the headline counts up, month bars grow from the baseline and each month of the list rises into view (GSAP ScrollTrigger; off under reduced motion).
+
+**Why I chose this approach:** Covers are the most personal, recognisable thing in a reading year, and they scale gracefully from 3 to 50. A distinct deep-ink hero with oversized serif numerals makes it feel like a special moment rather than another dashboard.
+
+**What I'd do differently:** A shareable public link (not just an image) and a month drill-down from the chart.
+
+### Book Discovery & Recommendations
+
+**The problem I was solving:** A search box isn't discovery, and an empty library is a dead end for anyone who doesn't already know what to add.
+
+**My approach:** The empty library shows a search box ("Search for a book you've read or want to read") and three hand-curated lists — *Short novels for a weekend*, *Made for book club conversations*, *Ideas that change how you work*. The page stays in this "getting started" layout until the reader has three books, so adding several in a row never makes the layout jump or lose focus. The same lists live on **Discover**, alongside a recommendation row that always shows its reason: "Same genre as *Ancillary Justice* — because you rated it 4★".
+
+Search results and curated books are 145×214 cards on the same grid as the library: cover, title, author, then year, typical length and edition count, with the add button pinned to the bottom of each card so buttons line up across a row. **One edition → one click to "Want to Read". Several editions → one extra, pre-answered step:** a dialog listing editions with page counts, format, publisher and language, with "Not sure yet — use the typical length" selected by default.
+
+*Why a dialog here, when the brand guidance says not to use modals for routine actions?* I first built the chooser inline, expanding the card across its row; once results became narrow cover cards, that broke the grid. Adding a single-edition book — the routine case — still never opens anything. The dialog is native `<dialog>`, so focus is trapped, Escape and the backdrop close it, and focus returns to the button. It has a fixed height, so editions arriving mid-animation don't make it grow and jump.
+
+**Why I chose this approach:** Curated lists solve the cold start with zero data and zero API calls (they're stored with real Open Library ids). Explainable recommendations need only one loved book. I added friction in exactly one place — the edition choice — because **the edition decides the page count every progress percentage is computed from** (Open Library lists *Circe* editions of 336 and 696 pages).
+
+**What I'd do differently:** Let readers collapse the edition step permanently ("always use typical length"), and broaden recommendations beyond a single seed book.
+
+### Reading Progress Tracking UX
+
+**The problem I was solving:** Progress updates happen constantly, so they must take seconds — yet the data must be trustworthy enough for goals and the review.
+
+**My approach:** Each Currently Reading card shows the position in the reader's own unit — `147 / 350 pages`, `35%`, or `1h 44m of 5h 18m` — a bar with subtle 50% / 90% ticks, and a **Log progress** button. That opens a single inline field ("Last page read"), saves optimistically, shows a short line ("Halfway there. Saved.") and an **Undo** for eight seconds. Reaching the last page doesn't silently finish the book: it asks **"Mark as finished?"**, and confirming moves it to *Read*, stamps the date and updates the goal and review together.
+- **Formats:** print tracks pages, e-books percent, audiobooks minutes. When the total is unknown the position is still saved ("Page 147"), with a prompt to add the edition's length for a percentage.
+- **What's stored:** each logged position and its timestamp. I deliberately **don't** derive streaks or reading speed from timestamps — people often log a session hours or days later. "Time to finish" is shown only when both a start and finish date exist.
+
+**Why I chose this approach:** One input per session keeps it effortless; one explicit confirmation at the end protects the data that goals and the review depend on. Undo replaces "edit history" forms.
+
+**What I'd do differently:** Optional reading sessions (start/end page with a date picker) for readers who *do* want pace statistics.
+
+### Other Design Choices
+
+**Palette.** I replaced the brand kit's amber/brown palette with a softer one built from [Color Hunt #FFB6B9 · #FAE3D9 · #BBDED6 · #61C0BF](https://colorhunt.co/palette/ffb6b9fae3d9bbded661c0bf) (pink, peach cream, mint, teal). The four source colours are pastels, so I used them as surfaces and highlights — peach cream for page backgrounds, mint for selected states, pink and teal glowing through the year-in-review hero — and derived deeper shades of the same hues for text and controls (teal `#1A7372` for links and buttons, rose `#D9667A` for star ratings). In dark mode the original teal and pink become the accents on a deep teal night. A unit test (`src/styles/tokens.test.ts`) reads `starter/tokens.css` and checks every text/background pairing against WCAG AA in both modes, so the palette can't silently regress.
+
+**Covers.** Every cover in the app shares one 145:214 portrait ratio; library and discovery grids use fixed 145px columns, so wider screens get more books per row rather than bigger covers. Missing covers get a hand-set placeholder (title and author in Lora on a muted spine colour) instead of a broken image, and Open Library's 1×1 "no cover" pixel is treated as missing.
+
+**Motion.** CSS handles hovers and simple transitions; GSAP handles choreography — the landing intro, shelf re-layout (Flip), the year-review scroll story (ScrollTrigger), search results staggering in, and dialogs that ease in and out. Everything is skipped under `prefers-reduced-motion`.
+
+**Navigation.** A sidebar on desktop (shelves with counts double as drag-and-drop targets) and a bottom bar on mobile; focus moves to each page's heading on navigation, behind a skip link.
+
+---
+
+## Development Journey
+
+### Initial Approach vs. Final
+
+I started with the foundation: a repository interface with two implementations (an in-memory guest library and Supabase), so the whole app worked without credentials from day one, and an Open Library client with throttling, caching and typed errors. The three design challenges came next, then the animated-shelf differentiator. The final app kept that architecture; what changed most was the presentation layer — card layouts, the palette and the motion system.
+
+### Decisions Reconsidered
+
+- **Edition picker:** inline expansion inside the card → a native dialog, once cards became narrow vertical cards.
+- **Palette:** I tried several palettes (a rebalanced pink/mint with a rose accent, a neon-cyan dark mode, an orange/sky pastel, a custom dark background) and came back to the first pink/mint version.
+- **Hover effects:** a simple lift on Discover covers → one shared `TiltCover` component used by every cover grid.
+- **Animation:** CSS-only → GSAP for the parts that are choreography rather than state transitions.
+- **Empty library:** switching straight to the dashboard after the first book made the page jump and lose focus; it now stays in a "getting started" layout until three books are added.
+
+### What Surprised Me
+
+- **Open Library's data really is messy:** merged works come back as redirects, cover endpoints return a 1×1 pixel instead of a 404 unless you ask, and popular works have hundreds of editions with very different page counts.
+- **A background bug surfaced through an unrelated feature:** the lazily loaded Supabase SDK rebuilt the guest repository when it arrived, remounting the page. Adding drag-and-drop shifted the timing enough for an end-to-end test to catch it.
+- **Supabase tables created via SQL needed explicit `GRANT`s** for the `authenticated` role (`permission denied`, 42501) even with RLS policies in place.
+- **Small CSS resets have reach:** `* { margin: 0 }` silently un-centred every modal dialog.
+
+### Session Breakdown
+
+| Session | Focus | What I Accomplished |
+|---------|-------|-------------------|
+| 1 | Foundation | Vite + React + TS setup, domain model, Open Library client, guest seed, Supabase schema and RLS, core screens |
+| 2 | Database | Verified Supabase against a live project with an opt-in integration test (RLS isolation between two users); added explicit grants |
+| 3 | Design challenges | Reading formats and progress logging with undo, curated discovery and explainable recommendations, edition chooser, year in review and share card |
+| 4 | Visual identity | Palette exploration and WCAG contrast test; brand kit updated to match |
+| 5 | Differentiator | Drag-and-drop between shelves with keyboard support; first commits with each commit building and testing on its own |
+| 6 | Layout polish | 145×214 covers everywhere, vertical discovery cards with aligned buttons, shared 3D cover tilt |
+| 7 | Motion | GSAP landing intro, Flip re-layout, year-review scroll story, search and dialog animations |
+| 8 | Ship | Edition dialog, GitHub Pages deployment (base path, SPA fallback, Actions workflow) |
+
+---
+
+## AI Collaboration Reflection
+
+### How I Used AI
+
+I built this with Claude Code as a pair programmer across planning, implementation, testing and git hygiene. I made the product calls — the stack (Supabase, React + Vite, CSS Modules), the differentiators, the direction for each design challenge, the palette, the card sizes and when to use a dialog — and the AI implemented them, wrote tests, and reported what it had and hadn't verified.
+
+### What Worked Well
+
+- **Writing the design direction down first** (a short brief per design challenge) and letting the AI implement against it.
+- **Asking for evidence:** every change ran type-checks, unit/integration tests and a production build; commits were verified one by one in a clean worktree.
+- **Measuring instead of guessing:** for the dialog animation, measuring the dialog's size and position frame by frame showed the real cause of the jank (content arriving mid-animation), not the easing curve.
+
+### What I Learned
+
+Short, concrete feedback ("the buttons should line up at the bottom", "the modal should be centred", "opening should be faster") produced the best iterations. Visual quality still needs a human looking at the screen: the AI's browser screenshots often failed, so I checked the UI myself.
+
+### Where I Pushed Back
+
+- Kept the first palette after trying several alternatives.
+- Asked for a modal edition picker even though the brand guidance discourages modals for routine actions; we kept single-edition adds modal-free and documented the trade-off.
+- Asked to unify all cover hover effects instead of keeping a lighter variant on Discover.
+
+---
+
+## Differentiators
+
+### Chosen Differentiator(s)
+
+**1. Animated Shelf & Cover Interactions**
+
+**Why I chose this:** Books are physical objects; moving one between shelves should feel like it.
+
+**How it enhances the product:** Books can be dragged from any shelf preview onto another shelf section, or onto a shelf name in the sidebar. The cover lifts and tilts in hand, every other shelf shows a dashed outline, the one underneath lights up ("Drop to move to Read"), and the book settles onto its new shelf with a small spring. A toast confirms the move with **Undo**, which restores the book exactly (dates and progress included). Covers tilt toward the cursor on hover, sorting and filtering glide books to their new places, and goal completion gets a confetti moment.
+
+**Implementation highlights:**
+- `@dnd-kit/core` with mouse, touch (long-press, so scrolling still works) and **keyboard** sensors. Keyboard dragging steps *shelf by shelf* rather than pixel by pixel: Space picks a book up, ↑/↓ choose a shelf, Space drops, Esc cancels — Enter still opens the book.
+- Cards stay real links: dnd-kit's `role="button"`, `aria-pressed` and "draggable" role description are stripped, and the drag instructions are attached with `aria-describedby`; every pick-up, hover and drop is announced.
+- Dropping on *Read* or *Currently Reading* applies the same rules as any other move (finish/start dates, progress), so drag-and-drop can't create inconsistent data.
+- **GSAP** for choreography CSS can't express well (hovers and simple transitions stay in CSS): **Flip** glides books to their new places when a shelf is sorted or filtered, **ScrollTrigger** turns the year in review into a calm scroll story, and timelines drive the landing intro, search results and dialogs. Counting numbers are `aria-hidden` duplicates so screen readers hear the final value at once; ScrollTrigger lives only in the year-review chunk.
+- Every animation respects `prefers-reduced-motion` (static highlight instead of the spring; GSAP checks it via `canAnimate()` and simply doesn't run).
+
+**What I learned:** Adding the drag layer exposed an unrelated bug: when the auth SDK finished loading in the background it rebuilt the guest repository and remounted the page under the reader. Splitting the guest and account repositories (and refreshing an on-screen library in place) fixed it.
+
+**2. Accessibility-First Reading Tracker**
+
+*(in progress)* Route-change focus management, live-region announcements for every optimistic update, a WCAG contrast test over the palette, keyboard-operable drag-and-drop, native `<dialog>` for confirmations and the edition picker, and `prefers-reduced-motion` respected by every animation.
+
+---
+
+## Self-Assessment
+
+Rate your implementation honestly. This self-awareness is part of the portfolio artifact.
+
+<!-- Ratings are mine to fill in after testing the deployed site. -->
+
+| Category | Rating | Notes |
+|----------|--------|-------|
+| **Works for real users** — Deployed, functional end-to-end | /5 | Guest mode needs no setup; accounts need the Supabase variables in the deploy |
+| **Book API integration** — Handles missing covers, varied ISBNs, inconsistent metadata | /5 | Throttle + cache, typed errors, edition-aware duplicates, 1×1-pixel covers treated as missing |
+| **Design-it-yourself features** — Quality and thoughtfulness of year-in-review, discovery, and progress tracking solutions | /5 | |
+| **Design quality** — Typography pairing, warm aesthetic, spacing, visual hierarchy, polish | /5 | |
+| **Responsive design** — Fully functional and well-designed across devices | /5 | |
+| **Performance** — Fast load, smooth scrolling, efficient cover image loading | /5 | Route-level code splitting; Supabase SDK loaded lazily; main bundle ≈ 178 KB gzip |
+| **Accessibility** — Keyboard nav, screen reader support, contrast | /5 | Automated WCAG AA contrast test for both themes |
+| **Edge case handling** — Empty states, errors, loading, missing data, large libraries | /5 | |
+| **Code quality** — Clean, maintainable, well-structured | /5 | 124 unit/integration tests plus an end-to-end flow test |
+| **Landing page** — Compelling, communicates value, visually polished | /5 | |
+| **Guest experience** — Immediately impressive, real books, full features | /5 | |
+
+### Lighthouse Scores
+
+To be measured on the deployed site.
+
+| Category | Score |
+|----------|-------|
+| Performance | |
+| Accessibility | |
+| Best Practices | |
+| SEO | |
+
+### Strengths
+
+- The guest library is immediately explorable and the whole app works without any backend configured.
+- Design decisions are backed by data rules (edition length drives progress; the review only claims totals it can support).
+- Accessibility is built in rather than bolted on: keyboard drag-and-drop, announcements, contrast tests, reduced-motion support.
+
+### Areas for Improvement
+
+- Stretch features not yet built: Goodreads CSV import, library search, manual dark-mode toggle, activity timeline, bulk actions.
+- Lighthouse and real-device testing on the deployed site.
+- Main bundle size: GSAP is in the main chunk because the landing intro must run before first paint.
+
+---
+
+## Known Limitations
+
+- **Shared catalog writes:** any signed-in user can insert or update rows in the shared `books` catalog (by design, for de-duplication); a server function would be safer.
+- **Whole-library load:** an account's library is loaded in one go — fine for hundreds of books, but it doesn't page.
+- **Auth email:** Supabase's built-in email service only delivers to project team members and is rate-limited; production needs custom SMTP.
+- **Currently Reading cards** use a smaller cover (88px) than the 145px grids.
+- **Year review sharing** produces an image only, not a public link.
+- **Accessibility differentiator** is still in progress (no high-contrast or dyslexia-font modes yet).
+
+---
+
+## Running Locally
+
+```bash
+# Clone the repo
+git clone https://github.com/jonghwascript/personal-reading-list.git
+cd personal-reading-list
+
+# Install dependencies
+npm install
+
+# Optional: connect Supabase for accounts (guest mode works without it)
+cp .env.example .env
+# Fill in your Supabase project URL and publishable (anon) key,
+# then run supabase/migrations/0001–0003 in the Supabase SQL editor.
+
+# Run the development server
+npm run dev
+
+# Tests and production build
+npm test
+npm run build
 ```
-bookshelf/
-├── spec/
-│   ├── product-definition.md      # What, who, why
-│   ├── core-requirements.md       # 19 features: 12 core + 7 stretch
-│   ├── design-challenges.md       # 3 features YOU design
-│   ├── technical-requirements.md  # Database, auth, Book API, deployment, performance
-│   └── differentiators.md         # 6 enhancements — pick 1-2
-├── guidance/
-│   ├── brand-kit.md               # Colors, typography, spacing, icons, mood
-│   ├── patterns.md                # UI/UX do's and don'ts
-│   └── accessibility.md           # WCAG checklist
-├── starter/
-│   ├── tokens.css                 # CSS custom properties
-│   └── tailwind.css               # Optional Tailwind v4 config
-├── data/
-│   ├── sample-books.json          # 45 curated books as JSON
-│   ├── sample-books.csv           # Same books in Goodreads CSV format
-│   └── README.md                  # Data edge case documentation
-├── AGENTS.md                      # AI collaboration context
-├── CLAUDE.md                      # Points to AGENTS.md
-└── README-template.md             # Template for your solution README
-```
 
-## Getting Started
+### Environment Variables
 
-1. **Read the spec** — Start with `spec/product-definition.md`, then `core-requirements.md`. Understand what you're building before you write code.
+| Variable | Description |
+|----------|------------|
+| `VITE_SUPABASE_URL` | Supabase project URL (`https://<ref>.supabase.co`). Optional — without it the app runs guest-only. |
+| `VITE_SUPABASE_ANON_KEY` | Supabase publishable (anon) key. Public by design; it ships in the browser bundle. |
+| `BASE_PATH` | Build-time base path. Unset (`/`) locally and on Vercel; the Pages workflow sets `/personal-reading-list/`. |
+| `RUN_SUPABASE_IT` | Set to `1` to run the live Supabase integration test (creates two throwaway users; needs "Confirm email" off). |
 
-2. **Review the brand kit** — `guidance/brand-kit.md` gives you the visual foundation. The brand kit and preview image give you a solid design foundation. Use them as your starting point — or, if you have a clear design vision of your own, feel free to create your own brand kit and go in a different direction. The starter CSS tokens and optional Tailwind config are ready to use.
+### Deployment
 
-3. **Explore the patterns** — `guidance/patterns.md` provides UI/UX do's and don'ts that will help you make strong design decisions without a Figma file.
+Pushing to `main` runs `.github/workflows/deploy-pages.yml`: install → test → build with the Pages base path → publish to GitHub Pages. Repository settings needed once: **Pages → Source: GitHub Actions**, and the two `VITE_SUPABASE_*` values as **Actions variables**. In Supabase, add the Pages URL to **Authentication → URL Configuration**.
 
-4. **Choose your stack** — This challenge is framework-agnostic. Next.js, Nuxt, SvelteKit, Remix, Astro — whatever you're most productive with. The recommended path is full-stack (database + auth), but there's a **frontend-only alternative** if you want to focus on UI/UX and frontend engineering — see `spec/technical-requirements.md` for details.
+---
 
-5. **Set up your AI workflow** — This project is designed for AI collaboration. `AGENTS.md` and `CLAUDE.md` give AI tools full context about the project — specs, guidance, and collaboration approach. We recommend working with AI across every phase: planning, building, and polishing.
+## Acknowledgments
 
-6. **Pick your differentiators** — Read `spec/differentiators.md` and choose 1-2 that match your interests. These are what make the project _yours_.
-
-7. **Start building** — Begin with foundation (auth, database, book API integration), then layer in features. The core-requirements spec is your roadmap. Core features give you a solid product; Stretch features take it to the next level.
-
-8. **Document as you go** — Use `README-template.md` for your solution README. Record design decisions, technical trade-offs, and lessons learned as they happen, not after.
-
-## Working with AI
-
-Product Challenges are designed for AI collaboration. The `AGENTS.md` and `CLAUDE.md` files give AI tools like Claude, Cursor, and Copilot full project context — including the spec, brand kit, and collaboration guidelines. Load them at the start of each session.
-
-Lean on AI for implementation, but don't just accept what it gives you. The design decisions are yours, and so is the code quality — review what gets generated, understand it, and make sure it's something you'd be happy putting your name on. The three design-it-yourself features (year-in-review & reading insights, book discovery & recommendations, reading progress tracking UX) are where your product thinking matters most.
-
-## Your Solution Repo
-
-The `.gitignore` is pre-configured to exclude challenge reference files (`spec/`, `guidance/`, `AGENTS.md`, etc.) from your solution repo. These files are your development reference — they stay on your machine for AI sessions and planning, but they don't belong in the finished product.
-
-Your public repo should contain:
-
-- Your application code
-- Your completed README (rename `README-template.md` → `README.md`)
-- The sample data files (needed for the guest experience)
-- The starter tokens (consumed by your build)
-
-This is how real products work: you reference the spec during development, you ship the product.
-
-## Learning Outcomes
-
-By completing this challenge, you'll have demonstrated:
-
-- **API integration and data normalization** — Handling real-world book API inconsistencies: missing covers, varied ISBNs, duplicate editions, incomplete metadata
-- **Full-stack architecture** — Database schema design, API routes, server-side data fetching, client-side state management
-- **Product design** — Shelf organization, reading progress UX, goal tracking, year-in-review statistics, and book discovery
-- **Data visualization** — Charts, progress indicators, reading statistics, and a year-in-review experience that tells a story
-- **Real-world deployment** — Live URL, environment configuration, production error handling, API key management
-- **Design taste** — Typography pairing (serif + sans-serif), warm color palette, visual hierarchy, responsive book cover grids without a Figma reference
-
-## Key Design Moments
-
-These screens are where your design taste will be most visible:
-
-1. **Library / shelf view** — Where users spend 80% of their time. Book cover grids need visual rhythm, consistent spacing, and clear hierarchy between shelf sections.
-2. **Year-in-review / statistics** — The most shareable screen. Data visualization, bold typography, and a distinct visual treatment that feels like a special moment.
-3. **Landing page** — First impression. Book covers should be prominently featured. The warm, literary aesthetic should be evident within 2 seconds.
-
-## Deploying Your Project
-
-Product Challenges require a live, publicly accessible URL. Recommended hosts:
-
-- [Vercel](https://vercel.com/)
-- [Netlify](https://www.netlify.com/)
-- [Render](https://render.com/)
-- [Fly.io](https://fly.io/)
-
-Make sure your environment variables are configured correctly and no secrets are exposed. Test your deployed URL in an incognito window before submitting — especially the guest experience.
-
-For more guidance, see our [hosting guide](https://www.frontendmentor.io/guides/hosting-your-solution).
-
-## Submitting Your Solution
-
-Submit your solution on the platform for the rest of the community to see. Follow our [guide to submitting solutions](https://www.frontendmentor.io/guides/how-to-submit-solutions) for the full process.
-
-When submitting, you'll need:
-
-- **Live site URL** — Submit the URL to your guest experience (e.g., `your-app.vercel.app/guest`), not the landing page. This ensures our solution reporters analyse your product code rather than the homepage. Test in incognito first.
-- **Repository URL** — A public repo with your solution code and completed README
-
-For your retrospective, Product Challenges give you a lot to write about — design decisions, AI collaboration, technical trade-offs. Be specific about what you're proud of and where you'd like feedback. See our [guide to writing effective retrospectives](https://www.frontendmentor.io/guides/write-an-effective-retrospective) for tips.
-
-## Sharing Your Solution
-
-Product Challenges create portfolio pieces worth sharing beyond the platform:
-
-1. Share your solution page in the **#finished-projects** channel of our [community](https://www.frontendmentor.io/community).
-2. Post on LinkedIn or X — include both your live URL and repo link. The guest experience means anyone clicking your link sees the product immediately.
-3. Add it to your portfolio — see our [guide to using challenges in your portfolio](https://www.frontendmentor.io/guides/use-challenges-in-your-portfolio).
-4. Blog about your experience. The design decisions, AI collaboration journey, and technical challenges make for compelling content. Great platforms to write on are [dev.to](https://dev.to/), [Hashnode](https://hashnode.com/), and [CodeNewbie](https://community.codenewbie.org/).
-
-## Questions?
-
-If anything in the spec is unclear or you want to discuss the challenge, join our [Discord community](https://www.frontendmentor.io/community).
-
-## Got Feedback for Us?
-
-We love receiving feedback! If you have anything you'd like to mention, please email hi[at]frontendmentor[dot]io.
+Built as a [Frontend Mentor Product Challenge](https://www.frontendmentor.io/challenges/personal-reading-list). Book data and covers from [Open Library](https://openlibrary.org). Colour palette from [Color Hunt](https://colorhunt.co/palette/ffb6b9fae3d9bbded661c0bf).
