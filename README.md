@@ -212,14 +212,14 @@ Rate your implementation honestly. This self-awareness is part of the portfolio 
 
 ### Lighthouse Scores
 
-To be measured on the deployed site.
+Measured with Lighthouse in **desktop** mode on the deployed site (https://jonghwascript.github.io/personal-reading-list/).
 
 | Category | Score |
 |----------|-------|
-| Performance | |
-| Accessibility | |
-| Best Practices | |
-| SEO | |
+| Performance | 93 |
+| Accessibility | 100 |
+| Best Practices | 96 |
+| SEO | 100 |
 
 ### Strengths
 
@@ -230,7 +230,7 @@ To be measured on the deployed site.
 ### Areas for Improvement
 
 - Stretch features not yet built: Goodreads CSV import, library search, manual dark-mode toggle, activity timeline, bulk actions.
-- Lighthouse and real-device testing on the deployed site.
+- Real-device testing on the deployed site (Lighthouse is green: 93 / 100 / 96 / 100).
 - Main bundle size: GSAP is in the main chunk because the landing intro must run before first paint.
 
 ---
