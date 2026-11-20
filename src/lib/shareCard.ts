@@ -7,10 +7,10 @@ export const CARD_SIZE = 1080;
 // Same room as the in-app review hero, in whichever palette the reader is using.
 const THEMES = {
   // One look for both schemes, matching the in-app hero.
-  light: { ink: '#14302f', cream: '#f4eee9', muted: '#b8cfcb', accent: '#ffb6b9', glow: '255,182,185' },
-  dark: { ink: '#14302f', cream: '#f4eee9', muted: '#b8cfcb', accent: '#ffb6b9', glow: '255,182,185' },
+  light: { ink: '#262021', cream: '#ede6d8', muted: '#c6bcae', accent: '#d9b26a', glow: '217,178,106' },
+  dark: { ink: '#262021', cream: '#ede6d8', muted: '#c6bcae', accent: '#d9b26a', glow: '217,178,106' },
 } as const;
-const SPINES = ['#1f5f5e', '#8a4b55', '#3e6e64', '#6b4a5e', '#2f5470', '#7a5a48'];
+const SPINES = ['#3b4a5e', '#7a3a52', '#5a5552', '#6a5526', '#2f4a45', '#6e3f35'];
 
 export interface ShareCardInput {
   year: number;
@@ -76,7 +76,7 @@ export async function drawShareCard(canvas: HTMLCanvasElement, input: ShareCardI
   const covers = await Promise.all(input.books.map((b) => loadCover(b.coverUrl)));
   const { ink: INK, cream: CREAM, muted: MUTED, accent: ACCENT, glow: GLOW } = THEMES[input.theme ?? 'light'];
 
-  // Background: deep teal ink with a soft glow, matching the in-app review hero.
+  // Background: the spine library's brown-black with a soft gilt glow, matching the in-app review hero.
   ctx.fillStyle = INK;
   ctx.fillRect(0, 0, CARD_SIZE, CARD_SIZE);
   const glow = ctx.createRadialGradient(CARD_SIZE * 0.85, 0, 50, CARD_SIZE * 0.85, 0, CARD_SIZE * 0.9);

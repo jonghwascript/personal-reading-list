@@ -5,15 +5,15 @@
 }
 
 /* ---------------------------------------------------------------------------- Hero
- * A deliberately different room: deep teal ink in both themes with the palette's pink and mint
+ * A deliberately different room: the dark spine library in both themes, with gilt gold and rose
  * glowing through, and oversized serif numerals. Text colours are fixed here (not theme tokens)
  * and checked for ≥ 8:1 contrast on the ink.
  */
 .hero {
-  --ink: #14302f;
-  --cream: #f4eee9;
-  --muted: #b8cfcb;
-  --highlight: #ffb6b9; /* palette pink: highlight colour on the ink */
+  --ink: #262021;
+  --cream: #ede6d8;
+  --muted: #c6bcae;
+  --highlight: #d9b26a; /* gilt gold: highlight colour on the ink */
 
   position: relative;
   display: grid;
@@ -24,8 +24,8 @@
   padding: var(--space-6) var(--space-5) var(--space-10);
   border-radius: var(--radius-xl);
   background:
-    radial-gradient(40rem 26rem at 100% 0%, rgb(255 182 185 / 0.22), transparent 70%),
-    radial-gradient(30rem 20rem at 0% 100%, rgb(97 192 191 / 0.3), transparent 70%),
+    radial-gradient(40rem 26rem at 100% 0%, rgb(217 178 106 / 0.18), transparent 70%),
+    radial-gradient(30rem 20rem at 0% 100%, rgb(199 136 154 / 0.24), transparent 70%),
     var(--ink);
   color: var(--cream);
   box-shadow: var(--shadow-lg);
@@ -232,7 +232,7 @@
   height: auto;
   aspect-ratio: 1;
   border-radius: var(--radius-md);
-  background: #1c3b3a;
+  background: #332b2d;
 }
 
 .previewCaption {

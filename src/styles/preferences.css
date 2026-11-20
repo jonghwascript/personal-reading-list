@@ -47,59 +47,59 @@
   --color-border: #7d6e67;
   --color-border-subtle: #b9a79e;
 
-  --color-text-primary: #0b1716;
-  --color-text-secondary: #1b2c2b;
-  --color-text-tertiary: #2a3d3c;
+  --color-text-primary: #140f10;
+  --color-text-secondary: #2a2224;
+  --color-text-tertiary: #3a3033;
 
-  --color-accent: #0b4746;
-  --color-accent-hover: #062f2e;
+  --color-accent: #5a2638;
+  --color-accent-hover: #3f1a27;
 
   --color-success: #134a2d;
   --color-warning: #4a3400;
   --color-error: #771b27;
 
-  --color-progress: #0f5c5b;
-  --color-rating: #a33a4d;
+  --color-progress: #5a2638;
+  --color-rating: #6e4c08;
 }
 
 @media (prefers-color-scheme: dark) {
   :root[data-contrast='more']:not([data-theme='light']) {
-    --color-border: #7f9e9a;
-    --color-border-subtle: #4d6966;
+    --color-border: #a3968a;
+    --color-border-subtle: #5e5154;
 
     --color-text-primary: #ffffff;
-    --color-text-secondary: #e6f1ef;
-    --color-text-tertiary: #c4d6d3;
+    --color-text-secondary: #f3eee6;
+    --color-text-tertiary: #ded5c8;
 
-    --color-accent: #9ce3e2;
-    --color-accent-hover: #c4f0ef;
+    --color-accent: #f0d49a;
+    --color-accent-hover: #f7e3bc;
 
-    --color-success: #a8ecc4;
+    --color-success: #b7e6c1;
     --color-warning: #f7d58c;
-    --color-error: #ffc2c9;
+    --color-error: #ffc9d1;
 
-    --color-progress: #9ce3e2;
-    --color-rating: #ffd0d2;
+    --color-progress: #f0d49a;
+    --color-rating: #e8b8c5;
   }
 }
 
 :root[data-contrast='more'][data-theme='dark'] {
-  --color-border: #7f9e9a;
-  --color-border-subtle: #4d6966;
+  --color-border: #a3968a;
+  --color-border-subtle: #5e5154;
 
   --color-text-primary: #ffffff;
-  --color-text-secondary: #e6f1ef;
-  --color-text-tertiary: #c4d6d3;
+  --color-text-secondary: #f3eee6;
+  --color-text-tertiary: #ded5c8;
 
-  --color-accent: #9ce3e2;
-  --color-accent-hover: #c4f0ef;
+  --color-accent: #f0d49a;
+  --color-accent-hover: #f7e3bc;
 
-  --color-success: #a8ecc4;
+  --color-success: #b7e6c1;
   --color-warning: #f7d58c;
-  --color-error: #ffc2c9;
+  --color-error: #ffc9d1;
 
-  --color-progress: #9ce3e2;
-  --color-rating: #ffd0d2;
+  --color-progress: #f0d49a;
+  --color-rating: #e8b8c5;
 }
 
 /* Text links are always underlined and focus rings are heavier in high contrast. (Styled links —

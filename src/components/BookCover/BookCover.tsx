@@ -16,9 +16,10 @@ interface BookCoverProps {
 }
 
 /**
- * Deep teal / rose / sage spines that sit with the palette. Each keeps the cream title at ≥ 5:1.
+ * Cloth-spine tones — navy, rose, stone, gilt, bottle green, oxblood, plum — that sit in the spine
+ * library. Each keeps the cream title at ≥ 6:1.
  */
-const PLACEHOLDER_TONES = ['#1f5f5e', '#8a4b55', '#3e6e64', '#6b4a5e', '#2f5470', '#7a5a48', '#4e6b5a'];
+const PLACEHOLDER_TONES = ['#3b4a5e', '#7a3a52', '#5a5552', '#6a5526', '#2f4a45', '#6e3f35', '#4a4060'];
 
 function toneFor(title: string): string {
   let hash = 0;

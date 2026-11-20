@@ -95,7 +95,7 @@ Search results and curated books are 145×214 cards on the same grid as the libr
 
 ### Other Design Choices
 
-**Palette.** I replaced the brand kit's amber/brown palette with a softer one built from [Color Hunt #FFB6B9 · #FAE3D9 · #BBDED6 · #61C0BF](https://colorhunt.co/palette/ffb6b9fae3d9bbded661c0bf) (pink, peach cream, mint, teal). The four source colours are pastels, so I used them as surfaces and highlights — peach cream for page backgrounds, mint for selected states, pink and teal glowing through the year-in-review hero — and derived deeper shades of the same hues for text and controls (teal `#1A7372` for links and buttons, rose `#D9667A` for star ratings). In dark mode the original teal and pink become the accents on a deep teal night. A unit test (`src/styles/tokens.test.ts`) reads `starter/tokens.css` and checks every text/background pairing against WCAG AA in both modes, so the palette can't silently regress.
+**Palette.** I replaced the brand kit's amber/brown palette with a "spine library": the mood of [Stripe Press](https://stripe.press), found through a Muzli reference search — a quiet, dark room where the books themselves carry the colour (I took the idea and colour values only; no assets, layout or code). Dark mode is the signature: brown-black ink `#262021`, cream-spine text `#EDE6D8`, a gilt-gold accent `#D9B26A` and rose `#C7889A` star ratings. Light mode is the same library by day — cream-spine paper, the ink as text, and the rose deepened to `#7E3F55` for links and buttons. Missing-cover placeholders use cloth-spine tones, and the year-in-review hero is the dark room in both themes. A unit test (`src/styles/tokens.test.ts`) reads `starter/tokens.css` and checks every text/background pairing against WCAG AA in both modes (AAA in high-contrast mode), so the palette can't silently regress.
 
 **Covers.** Every cover in the app shares one 145:214 portrait ratio; library and discovery grids use fixed 145px columns, so wider screens get more books per row rather than bigger covers. Missing covers get a hand-set placeholder (title and author in Lora on a muted spine colour) instead of a broken image, and Open Library's 1×1 "no cover" pixel is treated as missing.
 
@@ -114,7 +114,7 @@ I started with the foundation: a repository interface with two implementations (
 ### Decisions Reconsidered
 
 - **Edition picker:** inline expansion inside the card → a native dialog, once cards became narrow vertical cards.
-- **Palette:** I tried several palettes (a rebalanced pink/mint with a rose accent, a neon-cyan dark mode, an orange/sky pastel, a custom dark background) and came back to the first pink/mint version.
+- **Palette:** I tried several palettes (a rebalanced pink/mint with a rose accent, a neon-cyan dark mode, an orange/sky pastel, a custom dark background) came back to the first pink/mint version, and finally moved to a reference-led "spine library" palette inspired by Stripe Press.
 - **Hover effects:** a simple lift on Discover covers → one shared `TiltCover` component used by every cover grid.
 - **Animation:** CSS-only → GSAP for the parts that are choreography rather than state transitions.
 - **Empty library:** switching straight to the dashboard after the first book made the page jump and lose focus; it now stays in a "getting started" layout until three books are added.
@@ -159,7 +159,7 @@ Short, concrete feedback ("the buttons should line up at the bottom", "the modal
 
 ### Where I Pushed Back
 
-- Kept the first palette after trying several alternatives.
+- Replaced the pastel palette with a reference-led "spine library" palette (Stripe Press mood) after a Muzli reference search.
 - Asked for a modal edition picker even though the brand guidance discourages modals for routine actions; we kept single-edition adds modal-free and documented the trade-off.
 - Asked to unify all cover hover effects instead of keeping a lighter variant on Discover.
 
@@ -297,4 +297,4 @@ Pushing to `main` runs `.github/workflows/deploy-pages.yml`: install → test �
 
 ## Acknowledgments
 
-Built as a [Frontend Mentor Product Challenge](https://www.frontendmentor.io/challenges/personal-reading-list). Book data and covers from [Open Library](https://openlibrary.org). Colour palette from [Color Hunt](https://colorhunt.co/palette/ffb6b9fae3d9bbded661c0bf).
+Built as a [Frontend Mentor Product Challenge](https://www.frontendmentor.io/challenges/personal-reading-list). Book data and covers from [Open Library](https://openlibrary.org). Palette mood inspired by [Stripe Press](https://stripe.press) (colours only; no assets or code reused).

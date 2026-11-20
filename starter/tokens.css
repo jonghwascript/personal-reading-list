@@ -1,40 +1,42 @@
 /*
- * Bookshelf palette — derived from Color Hunt #FFB6B9 · #FAE3D9 · #BBDED6 · #61C0BF.
- * The four source colours are pastel, so they're used as surfaces and highlights; text and
- * interactive colours are deeper shades of the same hues. Every text token meets WCAG AA (4.5:1)
- * on every background token in its mode; progress and rating marks meet 3:1.
+ * Bookshelf palette — "spine library". Mood taken from Stripe Press (stripe.press): the page stays
+ * quiet and the book covers carry the colour. Colours only; no assets or code reused.
+ * Dark is the signature room: a warm near-black (#262021) with cream text, a gilt-spine gold accent
+ * and a rose second accent. Light is the same library by day: cream-spine paper, the brown ink as
+ * text, and the rose deepened into the accent. Every text token meets WCAG AA (4.5:1) on every
+ * background token in its mode; progress and rating marks meet 3:1.
  */
 :root {
-  /* Surfaces: peach cream (#FAE3D9) lightened for the page, full strength for hover/tracks. */
-  --color-bg-primary: #fff9f6;
-  --color-bg-secondary: #fdf1ec;
-  --color-bg-tertiary: #fae3d9;
-  --color-surface: #ffffff;
-  --color-border: #e9d4cb;
-  --color-border-subtle: #f3e3dc;
+  /* Surfaces: the cream spine (#baae98) lightened into paper, full strength for hover/tracks. */
+  --color-bg-primary: #f6f1e8;
+  --color-bg-secondary: #efe8dc;
+  --color-bg-tertiary: #e6dccb;
+  --color-surface: #fffcf7;
+  --color-border: #d5c8b4;
+  --color-border-subtle: #e6dccb;
 
-  /* Text: deep teal ink, harmonised with the teal accent. */
-  --color-text-primary: #1f3534;
-  --color-text-secondary: #43585a;
-  --color-text-tertiary: #556766;
+  /* Text: the dark room's brown-black, used as ink. */
+  --color-text-primary: #262021;
+  --color-text-secondary: #4e4346;
+  --color-text-tertiary: #5f5457;
 
-  /* Accent: teal (#61C0BF) deepened for 5.4:1 text contrast and white button labels. */
-  --color-accent: #1a7372;
-  --color-accent-hover: #135a59;
-  --color-accent-subtle: #e4f3f0; /* mint #BBDED6, lightened */
+  /* Accent: the rose spine (#c7889a) deepened for text contrast and white button labels. */
+  --color-accent: #7e3f55;
+  --color-accent-hover: #642f43;
+  --color-accent-subtle: #f3e5e8;
 
-  --color-success: #277049;
-  --color-warning: #805a00;
-  --color-error: #ae3242;
+  --color-success: #2f6b45;
+  --color-warning: #765300;
+  --color-error: #a3303d;
 
-  --color-progress: #1f8180;
-  --color-rating: #d9667a; /* pink #FFB6B9, deepened to stay visible on white */
+  --color-progress: #7e3f55;
+  --color-rating: #94680f; /* gilt gold, deepened to stay visible on paper */
 
   /* The untouched source colours, for decorative use (glows, highlights, illustrations). */
-  --color-pink: #ffb6b9;
-  --color-peach: #fae3d9;
-  --color-mint: #bbded6;
-  --color-teal: #61c0bf;
+  --color-ink: #262021;
+  --color-cream: #ede6d8;
+  --color-gold: #d9b26a;
+  --color-rose: #c7889a;
 
   --font-heading: 'Lora', Georgia, 'Times New Roman', serif;
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
@@ -79,11 +81,11 @@
   --radius-xl: 1rem;
   --radius-full: 9999rem;
 
-  /* Shadows tinted with the teal ink instead of neutral black. */
-  --shadow-sm: 0 1px 3px rgba(20, 48, 47, 0.07);
-  --shadow-md: 0 4px 8px -1px rgba(20, 48, 47, 0.09), 0 2px 4px -2px rgba(20, 48, 47, 0.05);
-  --shadow-lg: 0 12px 20px -4px rgba(20, 48, 47, 0.13), 0 4px 8px -4px rgba(20, 48, 47, 0.07);
-  --shadow-book: 0 2px 8px rgba(20, 48, 47, 0.16), 0 1px 3px rgba(20, 48, 47, 0.1);
+  /* Shadows tinted with the brown ink instead of neutral black. */
+  --shadow-sm: 0 1px 3px rgba(38, 32, 33, 0.08);
+  --shadow-md: 0 4px 8px -1px rgba(38, 32, 33, 0.1), 0 2px 4px -2px rgba(38, 32, 33, 0.06);
+  --shadow-lg: 0 12px 20px -4px rgba(38, 32, 33, 0.14), 0 4px 8px -4px rgba(38, 32, 33, 0.08);
+  --shadow-book: 0 2px 8px rgba(38, 32, 33, 0.18), 0 1px 3px rgba(38, 32, 33, 0.12);
 
   --sidebar-width: 15rem;
   --content-max-width: 48rem;
@@ -98,28 +100,28 @@
  */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    /* Deep teal night; the original teal and pink become the bright accents. */
-    --color-bg-primary: #142120;
-    --color-bg-secondary: #1a2b2a;
-    --color-bg-tertiary: #233736;
-    --color-surface: #1a2b2a;
-    --color-border: #34504d;
-    --color-border-subtle: #233736;
+    /* The spine library at night: brown-black room, cream text, gilt gold and rose accents. */
+    --color-bg-primary: #262021;
+    --color-bg-secondary: #2e2729;
+    --color-bg-tertiary: #3a3134;
+    --color-surface: #332b2d;
+    --color-border: #54474a;
+    --color-border-subtle: #3a3134;
 
-    --color-text-primary: #ecf5f3;
-    --color-text-secondary: #afc4c0;
-    --color-text-tertiary: #8aa5a1;
+    --color-text-primary: #ede6d8;
+    --color-text-secondary: #cbc1b3;
+    --color-text-tertiary: #b0a597;
 
-    --color-accent: #61c0bf;
-    --color-accent-hover: #86d2d1;
-    --color-accent-subtle: #1f3a39;
+    --color-accent: #d9b26a;
+    --color-accent-hover: #e6c88e;
+    --color-accent-subtle: #3d3428;
 
-    --color-success: #6fcb9c;
+    --color-success: #8fcb9b;
     --color-warning: #e9b95c;
-    --color-error: #ff8e99;
+    --color-error: #f29aa8;
 
-    --color-progress: #61c0bf;
-    --color-rating: #ffb6b9;
+    --color-progress: #d9b26a;
+    --color-rating: #c7889a;
 
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 8px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.25);
@@ -129,28 +131,28 @@
 }
 
 :root[data-theme='dark'] {
-  /* Deep teal night; the original teal and pink become the bright accents. */
-  --color-bg-primary: #142120;
-  --color-bg-secondary: #1a2b2a;
-  --color-bg-tertiary: #233736;
-  --color-surface: #1a2b2a;
-  --color-border: #34504d;
-  --color-border-subtle: #233736;
+  /* The spine library at night: brown-black room, cream text, gilt gold and rose accents. */
+  --color-bg-primary: #262021;
+  --color-bg-secondary: #2e2729;
+  --color-bg-tertiary: #3a3134;
+  --color-surface: #332b2d;
+  --color-border: #54474a;
+  --color-border-subtle: #3a3134;
 
-  --color-text-primary: #ecf5f3;
-  --color-text-secondary: #afc4c0;
-  --color-text-tertiary: #8aa5a1;
+  --color-text-primary: #ede6d8;
+  --color-text-secondary: #cbc1b3;
+  --color-text-tertiary: #b0a597;
 
-  --color-accent: #61c0bf;
-  --color-accent-hover: #86d2d1;
-  --color-accent-subtle: #1f3a39;
+  --color-accent: #d9b26a;
+  --color-accent-hover: #e6c88e;
+  --color-accent-subtle: #3d3428;
 
-  --color-success: #6fcb9c;
+  --color-success: #8fcb9b;
   --color-warning: #e9b95c;
-  --color-error: #ff8e99;
+  --color-error: #f29aa8;
 
-  --color-progress: #61c0bf;
-  --color-rating: #ffb6b9;
+  --color-progress: #d9b26a;
+  --color-rating: #c7889a;
 
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 8px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.25);

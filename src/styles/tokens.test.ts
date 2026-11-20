@@ -42,7 +42,7 @@ const TEXT = ['color-text-primary', 'color-text-secondary', 'color-text-tertiary
 
 describe.each([
   ['light', light, '#ffffff'],
-  ['dark', dark, '#0f1e1d'],
+  ['dark', dark, '#1e191a'],
 ])('%s palette', (_mode, p, onAccent) => {
   it.each(TEXT.flatMap((t) => BACKGROUNDS.map((bg) => [t, bg])))('%s on %s ≥ 4.5:1', (text, bg) => {
     expect(contrast(p[text]!, p[bg]!)).toBeGreaterThanOrEqual(4.5);
@@ -80,7 +80,7 @@ describe('high contrast (AAA)', () => {
 
   it.each([
     ['light', hcLight, '#ffffff'],
-    ['dark', hcDark, '#0f1e1d'],
+    ['dark', hcDark, '#1e191a'],
   ])('%s: every text token ≥ 7:1, labels ≥ 7:1, borders and marks ≥ 3:1', (_mode, p, onAccent) => {
     for (const text of TEXT) for (const bg of BACKGROUNDS) expect(contrast(p[text]!, p[bg]!), `${text} on ${bg}`).toBeGreaterThanOrEqual(7);
     expect(contrast(onAccent as string, p['color-accent']!)).toBeGreaterThanOrEqual(7);

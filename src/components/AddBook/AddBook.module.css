@@ -45,7 +45,7 @@
 .dialog::backdrop {
   /* --backdrop-opacity is tweened by useAnimatedDialog so the dim fades with the panel. No blur:
      animating a full-screen backdrop-filter repaints every frame and makes the fade stutter. */
-  background: rgb(20 48 47 / calc(0.5 * var(--backdrop-opacity, 1)));
+  background: rgb(38 32 33 / calc(0.5 * var(--backdrop-opacity, 1)));
 }
 
 
