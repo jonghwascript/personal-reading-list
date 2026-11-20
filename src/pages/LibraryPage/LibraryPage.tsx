@@ -69,6 +69,9 @@ export function LibraryPage() {
               : `${pluralize(entries.length, 'book')} so far. Add a couple more and your full library view opens up.`}
           </p>
           <StartSearch autoFocus={entries.length === 0} />
+          <Link to="/import" className={styles.reviewLink}>
+            Coming from Goodreads? Import your library <ArrowRight size={16} aria-hidden="true" />
+          </Link>
         </header>
         {reading.length > 0 && readingShelf && <ReadingSection entries={reading} shelfId={readingShelf.id} />}
         {others.length > 0 && (

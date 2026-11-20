@@ -101,6 +101,8 @@ Search results and curated books are 145×214 cards on the same grid as the libr
 
 **Motion.** CSS handles hovers and simple transitions; GSAP handles choreography — the landing intro, shelf re-layout (Flip), the year-review scroll story (ScrollTrigger), search results staggering in, and dialogs that ease in and out. Everything is skipped under `prefers-reduced-motion`.
 
+**Goodreads import.** Choose the export file (or try a sample) and you see a preview before anything is saved. It shows which books are new, which are already in your library or listed twice in the file (both are skipped), any rows it couldn't read (with line numbers), and where each Goodreads shelf will go. `read` / `to-read` / `currently-reading` map to the three default shelves. Each custom shelf gets a choice: a new matching shelf (the default), one of your shelves (same-named shelves are picked automatically), a genre tag, or "don't keep". A book sits on one shelf here, so a custom shelf only decides where the book goes. Its reading status, read date, rating, and Goodreads review and private notes still come from the export, and missing dates are left empty, never stamped with today. The parser is a small quote-aware CSV reader written for the export's quirks: `="…"` ISBNs, a leading space, `0` meaning "not rated", HTML in reviews, short rows and missing columns. Open Library lookup is optional and can be skipped part-way. ISBNs go in batches of 40 (`isbn:(a OR b …)`), so 500 books take about a dozen polite requests, and books without a match fall back to a title + author search. Saving runs in chunks of 100 through one bulk insert per table. If saving fails part-way, the books already saved stay, and re-importing the same file skips them.
+
 **Navigation.** A sidebar on desktop (shelves with counts double as drag-and-drop targets) and a bottom bar on mobile; focus moves to each page's heading on navigation, behind a skip link.
 
 ---
@@ -240,7 +242,7 @@ Measured with Lighthouse on the deployed site (https://jonghwascript.github.io/p
 
 ### Areas for Improvement
 
-- Stretch features not yet built: Goodreads CSV import, activity timeline, bulk actions.
+- Stretch features not yet built: activity timeline, bulk actions.
 - Real-device testing on the deployed site. Lighthouse clears every target on desktop (93 / 100 / 96 / 100) and mobile (86 / 100 / 92 / 91), but mobile performance has the least headroom over the 85 target.
 - Main bundle size: GSAP is in the main chunk because the landing intro must run before first paint.
 
@@ -253,6 +255,7 @@ Measured with Lighthouse on the deployed site (https://jonghwascript.github.io/p
 - **Auth email:** Supabase's built-in email service only delivers to project team members and is rate-limited; production needs custom SMTP.
 - **Currently Reading cards** use a smaller cover (88px) than the 145px grids.
 - **Year review sharing** produces an image only, not a public link.
+- **Goodreads import** doesn't bring over read counts, owned copies or spoiler flags, and a book on several custom Goodreads shelves lands on the first one that is mapped to a shelf.
 - **Screen readers:** not yet tested with NVDA, JAWS, VoiceOver or TalkBack.
 
 ---

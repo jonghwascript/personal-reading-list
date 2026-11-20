@@ -17,6 +17,8 @@ export interface LibraryRepository {
   readonly kind: 'guest' | 'account';
   load(): Promise<LibrarySnapshot>;
   addEntry(entry: LibraryEntry): Promise<LibraryEntry>;
+  /** Bulk addEntry for imports: one round trip per table instead of two per book. */
+  addEntries(entries: LibraryEntry[]): Promise<LibraryEntry[]>;
   /** Persists mutable fields: shelf, dates, rating, notes, progress, and the book's genres. */
   saveEntries(entries: LibraryEntry[]): Promise<void>;
   removeEntries(ids: string[]): Promise<void>;

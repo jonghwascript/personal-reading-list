@@ -1,5 +1,5 @@
 import type { Book } from '../types';
-import { cleanIsbn, looksLikeIsbn } from './bookIdentity';
+import { cleanIsbn, isbn10To13, looksLikeIsbn } from './bookIdentity';
 import { normalizeGenres } from './genres';
 
 const API = 'https://openlibrary.org';
@@ -90,8 +90,8 @@ function throttled<T>(task: () => Promise<T>): Promise<T> {
   return run;
 }
 
-async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
-  const cached = readCache<T>(url);
+async function getJson<T>(url: string, signal?: AbortSignal, { cache = true }: { cache?: boolean } = {}): Promise<T> {
+  const cached = cache ? readCache<T>(url) : undefined;
   if (cached !== undefined) return cached;
 
   return throttled(async () => {
@@ -122,7 +122,7 @@ async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
     } catch {
       throw new BookApiError('bad-response', 'Open Library sent a response we could not read.');
     }
-    writeCache(url, data);
+    if (cache) writeCache(url, data);
     return data;
   });
 }
@@ -232,6 +232,49 @@ function mapDocs(docs: SearchDoc[]): { books: Book[]; editionCounts: Record<stri
     editionCounts[book.id] = doc.edition_count ?? 1;
   }
   return { books, editionCounts };
+}
+
+// ---------------------------------------------------------------------------
+// Bulk lookup (Goodreads import)
+// ---------------------------------------------------------------------------
+
+/** ISBNs per request: keeps the URL short and a 500-book import to a dozen polite requests. */
+export const ISBN_BATCH_SIZE = 40;
+
+/**
+ * Looks up many ISBN-13s in one search ("isbn:(a OR b …)") and maps each back to the work that
+ * lists it. Not cached: import responses are bulky and would crowd guest data out of session storage.
+ */
+export async function lookupIsbns(isbns: string[], signal?: AbortSignal): Promise<Map<string, Book>> {
+  const wanted = new Set(isbns.map((i) => cleanIsbn(i)).filter((i): i is string => i !== null));
+  const found = new Map<string, Book>();
+  if (wanted.size === 0) return found;
+  const params = new URLSearchParams({
+    q: `isbn:(${[...wanted].join(' OR ')})`,
+    fields: SEARCH_FIELDS,
+    limit: String(wanted.size * 2),
+  });
+  const data = await getJson<SearchResponse>(`${API}/search.json?${params}`, signal, { cache: false });
+  if (!data || !Array.isArray(data.docs)) throw new BookApiError('bad-response', 'Search results were malformed.');
+  for (const doc of data.docs) {
+    const book = docToBook(doc);
+    if (!book) continue;
+    for (const raw of doc.isbn ?? []) {
+      const clean = cleanIsbn(raw);
+      const as13 = clean?.length === 10 ? isbn10To13(clean) : clean;
+      if (as13 && wanted.has(as13) && !found.has(as13)) found.set(as13, book);
+    }
+  }
+  return found;
+}
+
+/** Candidates for a book we only know by title and author. */
+export async function searchTitleAuthor(title: string, author: string | undefined, signal?: AbortSignal): Promise<Book[]> {
+  const params = new URLSearchParams({ title, fields: SEARCH_FIELDS, limit: '5' });
+  if (author) params.set('author', author);
+  const data = await getJson<SearchResponse>(`${API}/search.json?${params}`, signal, { cache: false });
+  if (!data || !Array.isArray(data.docs)) throw new BookApiError('bad-response', 'Search results were malformed.');
+  return mapDocs(data.docs).books;
 }
 
 /** Highest-rated works for a subject — the raw material for "same genre as…" suggestions. */

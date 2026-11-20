@@ -28,6 +28,12 @@ export class GuestRepository implements LibraryRepository {
     return entry;
   }
 
+  async addEntries(entries: LibraryEntry[]): Promise<LibraryEntry[]> {
+    this.state.entries.push(...structuredClone(entries));
+    this.write();
+    return entries;
+  }
+
   async saveEntries(entries: LibraryEntry[]): Promise<void> {
     const byId = new Map(entries.map((e) => [e.id, e]));
     this.state.entries = this.state.entries.map((e) => structuredClone(byId.get(e.id) ?? e));

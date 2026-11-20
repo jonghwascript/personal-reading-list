@@ -19,6 +19,11 @@ interface LibraryValue {
   reload(): Promise<void>;
   /** Throws DuplicateBookError when another edition is already in the library. */
   addBook(book: Book, shelfId: string): Promise<LibraryEntry>;
+  /**
+   * Saves imported books in chunks, creating `newShelves` first. Each chunk appears as soon as it is
+   * stored, so a failure part-way leaves the library showing exactly what was saved.
+   */
+  importBooks(newShelves: Shelf[], entries: LibraryEntry[], onProgress?: (saved: number) => void): Promise<ImportOutcome>;
   moveEntries(ids: string[], shelfId: string): Promise<void>;
   /** Puts entries back exactly as given — dates and progress included. Used by "Undo" after a move. */
   restoreEntries(previous: LibraryEntry[]): Promise<void>;
@@ -40,8 +45,14 @@ interface LibraryValue {
   clearGoal(year: number): Promise<void>;
 }
 
+export interface ImportOutcome {
+  saved: number;
+  error: string | null;
+}
+
 const LibraryContext = createContext<LibraryValue | null>(null);
 const EMPTY: LibrarySnapshot = { shelves: [], entries: [], goals: [], logs: [] };
+const IMPORT_CHUNK = 100;
 
 const newId = () => crypto.randomUUID();
 
@@ -157,6 +168,25 @@ export function LibraryProvider({ repository, children }: { repository: LibraryR
         // The repository may have linked the entry to an existing shared catalog row (new book id).
         if (saved !== draft) commit({ ...current.current, entries: replaceEntries([saved]) });
         return saved;
+      },
+
+      async importBooks(newShelves, entries, onProgress) {
+        let saved = 0;
+        try {
+          if (newShelves.length > 0) {
+            await repository.saveShelves(newShelves);
+            commit({ ...current.current, shelves: [...current.current.shelves, ...newShelves] });
+          }
+          for (let i = 0; i < entries.length; i += IMPORT_CHUNK) {
+            const stored = await repository.addEntries(entries.slice(i, i + IMPORT_CHUNK));
+            commit({ ...current.current, entries: [...current.current.entries, ...stored] });
+            saved += stored.length;
+            onProgress?.(saved);
+          }
+          return { saved, error: null };
+        } catch (err) {
+          return { saved, error: err instanceof Error && err.message ? err.message : 'Unknown error' };
+        }
       },
 
       async moveEntries(ids, shelfId) {

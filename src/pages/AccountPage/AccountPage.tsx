@@ -1,4 +1,4 @@
-import { LogOut, RotateCcw, UserRound } from 'lucide-react';
+import { FileUp, LogOut, RotateCcw, UserRound } from 'lucide-react';
 import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ReadingSettings } from '../../components/ReadingSettings/ReadingSettings';
@@ -94,6 +94,18 @@ export function AccountPage() {
           </div>
         </div>
       )}
+
+      <section className={styles.card} aria-labelledby="import-heading">
+        <h2 id="import-heading" className={styles.cardTitle}>
+          Import
+        </h2>
+        <p>Coming from Goodreads? Bring your shelves, ratings and read dates with you.</p>
+        <div className={styles.actions}>
+          <ButtonLink to="/import" variant="secondary" icon={<FileUp />}>
+            Import from Goodreads
+          </ButtonLink>
+        </div>
+      </section>
 
       <section className={styles.card} aria-labelledby="appearance-heading" id="appearance">
         <h2 id="appearance-heading" className={styles.cardTitle}>

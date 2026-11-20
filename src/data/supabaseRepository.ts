@@ -107,6 +107,24 @@ function entryToRow(entry: LibraryEntry, userId: string) {
   };
 }
 
+function bookToRow(book: Book) {
+  return {
+    catalog_key: catalogKey(book),
+    title: book.title,
+    authors: book.authors,
+    cover_url: book.coverUrl,
+    isbn10: book.isbn10,
+    isbn13: book.isbn13,
+    page_count: book.pageCount,
+    published_year: book.publishedYear,
+    publisher: book.publisher,
+    description: book.description,
+    genres: book.genres,
+    source: book.source,
+    work_key: book.workKey,
+  };
+}
+
 /** Throws the Supabase error so the optimistic layer can roll back and explain what failed. */
 function check<T>(result: { data: T | null; error: { message: string } | null }): T {
   if (result.error) throw new Error(result.error.message);
@@ -155,27 +173,27 @@ export class SupabaseRepository implements LibraryRepository {
 
   /** Upserts into the shared catalog first, then links the user's entry to that row. */
   async addEntry(entry: LibraryEntry): Promise<LibraryEntry> {
-    const { book } = entry;
-    const catalogRow = {
-      catalog_key: catalogKey(book),
-      title: book.title,
-      authors: book.authors,
-      cover_url: book.coverUrl,
-      isbn10: book.isbn10,
-      isbn13: book.isbn13,
-      page_count: book.pageCount,
-      published_year: book.publishedYear,
-      publisher: book.publisher,
-      description: book.description,
-      genres: book.genres,
-      source: book.source,
-      work_key: book.workKey,
-    };
-    const saved = check(
-      await this.db.from('books').upsert(catalogRow, { onConflict: 'catalog_key' }).select(BOOK_COLUMNS).single(),
-    ) as BookRow;
-    const linked: LibraryEntry = { ...entry, book: rowToBook(saved, book.genres) };
-    check(await this.db.from('library_entries').insert(entryToRow(linked, this.userId)));
+    const [linked] = await this.addEntries([entry]);
+    return linked!;
+  }
+
+  async addEntries(entries: LibraryEntry[]): Promise<LibraryEntry[]> {
+    if (entries.length === 0) return [];
+    // One row per catalog key: Postgres refuses an upsert that touches the same row twice.
+    const catalogRows = new Map(entries.map((e) => [catalogKey(e.book), bookToRow(e.book)]));
+    const saved = rows(
+      await this.db
+        .from('books')
+        .upsert([...catalogRows.values()], { onConflict: 'catalog_key' })
+        .select(`catalog_key,${BOOK_COLUMNS}`),
+    ) as (BookRow & { catalog_key: string })[];
+    const byKey = new Map(saved.map((row) => [row.catalog_key, row]));
+    const linked = entries.map((entry) => {
+      const row = byKey.get(catalogKey(entry.book));
+      if (!row) throw new Error(`The catalog didn't return “${entry.book.title}”`);
+      return { ...entry, book: rowToBook(row, entry.book.genres) };
+    });
+    check(await this.db.from('library_entries').insert(linked.map((e) => entryToRow(e, this.userId))));
     return linked;
   }
 

@@ -22,6 +22,7 @@ const YearReviewPage = named(() => import('./pages/YearReviewPage/YearReviewPage
 const AccountPage = named(() => import('./pages/AccountPage/AccountPage'), 'AccountPage');
 const AccessibilityPage = named(() => import('./pages/AccessibilityPage/AccessibilityPage'), 'AccessibilityPage');
 const LibrarySearchPage = named(() => import('./pages/LibrarySearchPage/LibrarySearchPage'), 'LibrarySearchPage');
+const ImportPage = named(() => import('./pages/ImportPage/ImportPage'), 'ImportPage');
 const SignInPage = named(() => import('./pages/AuthPages/AuthPages'), 'SignInPage');
 const SignUpPage = named(() => import('./pages/AuthPages/AuthPages'), 'SignUpPage');
 const ForgotPasswordPage = named(() => import('./pages/AuthPages/AuthPages'), 'ForgotPasswordPage');
@@ -58,6 +59,7 @@ export function App() {
               <Route path="/review/:year" element={<YearReviewPage />} />
               <Route path="/library/search" element={<LibrarySearchPage />} />
               <Route path="/account" element={<AccountPage />} />
+              <Route path="/import" element={<ImportPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
