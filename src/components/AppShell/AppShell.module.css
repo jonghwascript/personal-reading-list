@@ -1,0 +1,376 @@
+.shell {
+  min-height: 100dvh;
+}
+
+.main {
+  width: 100%;
+  max-width: calc(var(--library-max-width) + 2 * var(--space-10));
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4) calc(var(--bottom-nav-height) + var(--space-12));
+}
+
+.main:focus {
+  outline: none;
+}
+
+/* ----------------------------------------------------------------------------
+ * Sidebar (desktop)
+ * ------------------------------------------------------------------------- */
+.sidebar {
+  display: none;
+}
+
+@media (min-width: 64em) {
+  .shell {
+    display: grid;
+    grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  }
+
+  .sidebar {
+    position: sticky;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    height: 100dvh;
+    overflow-y: auto;
+    padding: var(--space-6) var(--space-4);
+    border-right: 1px solid var(--color-border-subtle);
+    background: var(--color-bg-secondary);
+  }
+
+  .main {
+    padding: var(--space-10) var(--space-10) var(--space-16);
+  }
+}
+
+.brand {
+  display: inline-flex;
+  align-self: flex-start;
+  color: var(--color-text-primary);
+  text-decoration: none;
+}
+
+.brand:hover {
+  color: var(--color-text-primary);
+}
+
+.searchLink {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2.5rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+  text-decoration: none;
+  transition: border-color var(--duration-fast) ease;
+}
+
+.searchLink:hover {
+  border-color: var(--color-accent);
+  color: var(--color-text-secondary);
+}
+
+.navList {
+  display: grid;
+  gap: 2px;
+}
+
+.navLink {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 2.5rem;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  text-decoration: none;
+  transition:
+    background-color var(--duration-fast) ease,
+    color var(--duration-fast) ease;
+}
+
+.navLink svg {
+  flex-shrink: 0;
+  color: var(--color-text-tertiary);
+}
+
+.navLink:hover {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+}
+
+/* Active state uses weight + an accent bar, not color alone. */
+.navLink.active {
+  position: relative;
+  background: var(--color-accent-subtle);
+  color: var(--color-text-primary);
+  font-weight: var(--font-semibold);
+}
+
+.navLink.active::before {
+  content: '';
+  position: absolute;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  left: 0;
+  width: 3px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+}
+
+.navLink.active svg {
+  color: var(--color-accent);
+}
+
+/* Drop targets while a book is being dragged. */
+.dropItem {
+  border-radius: var(--radius-md);
+  transition:
+    background-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease,
+    transform var(--duration-fast) var(--ease-spring);
+}
+
+.dropItem[data-candidate] {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 35%, transparent);
+}
+
+.dropItem[data-over] {
+  background: var(--color-accent-subtle);
+  box-shadow: inset 0 0 0 2px var(--color-accent);
+  transform: translateX(4px);
+}
+
+.dropItem[data-over] .navLink {
+  color: var(--color-text-primary);
+  font-weight: var(--font-semibold);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dropItem[data-over] {
+    transform: none;
+  }
+}
+
+.shelfNav {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0 var(--space-3);
+}
+
+.sectionTitle {
+  color: var(--color-text-tertiary);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.manageLink {
+  font-size: var(--text-xs);
+}
+
+.shelfName {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.count {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.newShelf {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 2.5rem;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+  text-align: left;
+}
+
+.newShelf:hover {
+  background: var(--color-bg-tertiary);
+  color: var(--color-accent);
+}
+
+.newShelfForm {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.newShelfInput {
+  flex: 1;
+  min-width: 0;
+  min-height: 2.5rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font-size: var(--text-sm);
+}
+
+.iconButton {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-tertiary);
+}
+
+.iconButton:hover:not(:disabled) {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+}
+
+.account {
+  display: grid;
+  gap: 2px;
+  margin-top: auto;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.accountNote {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  overflow: hidden;
+  padding: 0 var(--space-3) var(--space-2);
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accountAction {
+  composes: navLink;
+  width: 100%;
+  border: 0;
+  background: none;
+  text-align: left;
+}
+
+/* ----------------------------------------------------------------------------
+ * Mobile header + bottom navigation
+ * ------------------------------------------------------------------------- */
+.mobileHeader {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--header-height);
+  padding: 0 var(--space-4);
+  border-bottom: 1px solid var(--color-border-subtle);
+  background: color-mix(in srgb, var(--color-bg-primary) 88%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+.headerIcon {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin-right: calc(-1 * var(--space-2));
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+}
+
+.bottomNav {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  border-top: 1px solid var(--color-border-subtle);
+  background: color-mix(in srgb, var(--color-bg-primary) 92%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+.bottomLink {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  text-decoration: none;
+}
+
+.bottomLink.active {
+  color: var(--color-accent);
+  font-weight: var(--font-semibold);
+}
+
+.bottomLink.active svg {
+  stroke-width: 2.4;
+}
+
+@media (min-width: 64em) {
+  .mobileHeader,
+  .bottomNav {
+    display: none;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+ * Guest banner
+ * ------------------------------------------------------------------------- */
+.guestBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin-bottom: var(--space-8);
+  padding: var(--space-3) var(--space-2) var(--space-3) var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
+  border-radius: var(--radius-lg);
+  background: var(--color-accent-subtle);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  line-height: var(--leading-loose);
+}
+
+.guestBanner p {
+  flex: 1;
+  padding-top: 0.55rem;
+}
+
+.guestIcon {
+  flex-shrink: 0;
+  margin-top: 0.6rem;
+  color: var(--color-accent);
+}

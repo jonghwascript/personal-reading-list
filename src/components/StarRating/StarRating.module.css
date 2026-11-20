@@ -1,0 +1,87 @@
+.static {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.on {
+  fill: var(--color-rating);
+  color: var(--color-rating);
+}
+
+.off {
+  color: var(--color-border);
+}
+
+.fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.legend {
+  margin-bottom: var(--space-1);
+  padding: 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.stars {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.star {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--radius-md);
+  color: var(--color-border);
+  cursor: pointer;
+  transition:
+    color var(--duration-fast) ease,
+    transform var(--duration-fast) var(--ease-spring);
+}
+
+.star[data-on='true'] {
+  color: var(--color-rating);
+}
+
+.star[data-on='true'] svg {
+  fill: currentColor;
+}
+
+/* Hovering previews the rating: highlight this star and every star before it. */
+@media (hover: hover) {
+  .stars:hover .star {
+    color: var(--color-rating);
+  }
+
+  .stars:hover .star:hover ~ .star {
+    color: var(--color-border);
+  }
+
+  .stars:hover .star:hover ~ .star svg {
+    fill: none;
+  }
+
+  .star:hover {
+    transform: scale(1.12);
+  }
+}
+
+.star:has(input:focus-visible) {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+.caption {
+  min-height: 1.45em;
+  margin-top: var(--space-1);
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+}

@@ -1,0 +1,187 @@
+.searchBox {
+  display: block;
+  margin-top: calc(-1 * var(--space-6));
+}
+
+.form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-2);
+}
+
+@media (min-width: 40em) {
+  .form {
+    grid-template-columns: 1fr auto auto;
+  }
+}
+
+.inputWrap {
+  position: relative;
+}
+
+.inputIcon {
+  position: absolute;
+  top: 50%;
+  left: var(--space-4);
+  color: var(--color-text-tertiary);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.input,
+.fieldSelect {
+  width: 100%;
+  min-height: 3rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.input {
+  padding: 0 var(--space-4) 0 calc(var(--space-4) + 1.75rem);
+  font-size: var(--text-base);
+}
+
+.fieldSelect {
+  padding: 0 var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.input:focus-visible,
+.fieldSelect:focus-visible {
+  border-color: var(--color-accent);
+  outline-offset: 1px;
+}
+
+.idle {
+  display: grid;
+  gap: var(--space-12);
+}
+
+.resultsHeading {
+  font-size: var(--text-lg);
+}
+
+.resultsQuery {
+  color: var(--color-text-tertiary);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  font-weight: var(--font-regular);
+}
+
+.results {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.result {
+  display: grid;
+  grid-template-columns: 4.5rem 1fr;
+  grid-template-areas:
+    'cover body'
+    'cover actions';
+  align-items: start;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+
+@media (min-width: 40em) {
+  .result {
+    grid-template-columns: 4.5rem 1fr auto;
+    grid-template-areas: 'cover body actions';
+    align-items: center;
+  }
+}
+
+.resultCover {
+  grid-area: cover;
+}
+
+.resultBody {
+  display: grid;
+  grid-area: body;
+  gap: 2px;
+  min-width: 0;
+}
+
+.resultTitle {
+  font-size: var(--text-lg);
+  line-height: var(--leading-snug);
+  overflow-wrap: break-word;
+}
+
+.resultAuthor {
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
+.resultMeta {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+}
+
+.resultActions {
+  grid-area: actions;
+}
+
+/* The edition chooser needs the full card width. */
+.result:has(form) {
+  grid-template-areas:
+    'cover body'
+    'actions actions';
+  grid-template-columns: 4.5rem 1fr;
+}
+
+.more {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  padding-top: var(--space-4);
+}
+
+.moreCount {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+}
+
+.compactError {
+  margin-top: var(--space-4);
+}
+
+.errorIcon {
+  display: inline;
+  margin-right: var(--space-2);
+  vertical-align: -0.15em;
+}
+
+.skeleton {
+  pointer-events: none;
+}
+
+.skeletonCover,
+.skeletonLine {
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, var(--color-bg-tertiary) 0%, var(--color-bg-secondary) 50%, var(--color-bg-tertiary) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+.skeletonCover {
+  aspect-ratio: var(--cover-ratio);
+}
+
+.skeletonLine {
+  height: 0.9rem;
+  margin-top: var(--space-2);
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}

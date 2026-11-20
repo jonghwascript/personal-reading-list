@@ -1,0 +1,500 @@
+.page {
+  display: grid;
+  gap: var(--space-12);
+}
+
+/* ---------------------------------------------------------------------------- Hero
+ * A deliberately different room: deep teal ink in both themes with the palette's pink and mint
+ * glowing through, and oversized serif numerals. Text colours are fixed here (not theme tokens)
+ * and checked for ≥ 8:1 contrast on the ink.
+ */
+.hero {
+  --ink: #14302f;
+  --cream: #f4eee9;
+  --muted: #b8cfcb;
+  --highlight: #ffb6b9; /* palette pink: highlight colour on the ink */
+
+  position: relative;
+  display: grid;
+  gap: var(--space-5);
+  overflow: hidden;
+  padding: var(--space-6) var(--space-5) var(--space-10);
+  border-radius: var(--radius-xl);
+  background:
+    radial-gradient(40rem 26rem at 100% 0%, rgb(255 182 185 / 0.22), transparent 70%),
+    radial-gradient(30rem 20rem at 0% 100%, rgb(97 192 191 / 0.3), transparent 70%),
+    var(--ink);
+  color: var(--cream);
+  box-shadow: var(--shadow-lg);
+}
+
+@media (min-width: 48em) {
+  .hero {
+    padding: var(--space-8) var(--space-12) var(--space-12);
+  }
+}
+
+.yearNav {
+  display: flex;
+  justify-content: space-between;
+  min-height: 2.75rem;
+}
+
+/* Colour is set per link class, never with a bare `.hero a`: that selector outranks the Button
+   component's own colours and turned primary ButtonLink labels the same gold as their background. */
+.yearLink {
+  color: var(--highlight);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 2.75rem;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  text-decoration: none;
+}
+
+.yearLink:hover {
+  background: rgb(255 255 255 / 0.08);
+}
+
+.eyebrow {
+  color: var(--highlight);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.headline {
+  color: var(--cream);
+  font-size: clamp(2rem, 1.2rem + 3.5vw, 3.5rem);
+  font-weight: var(--font-semibold);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+.headline:focus {
+  outline: none;
+}
+
+.bigNumber {
+  display: block;
+  font-size: clamp(5rem, 3rem + 10vw, 9.5rem);
+  font-weight: var(--font-bold);
+  line-height: 0.9;
+  color: var(--highlight);
+  font-variant-numeric: lining-nums;
+}
+
+.sentence {
+  max-width: 36rem;
+  color: var(--muted);
+  font-family: var(--font-serif);
+  font-size: var(--text-lg);
+  line-height: var(--leading-relaxed);
+}
+
+.sentence cite {
+  color: var(--cream);
+  font-style: italic;
+}
+
+.emptyActions {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-4);
+}
+
+/* ------------------------------------------------- Covers: all books, or a fanned highlight */
+.covers {
+  display: flex;
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.coversAll {
+  flex-wrap: wrap;
+  gap: var(--space-6);
+}
+
+.coversAll .coverItem {
+  width: clamp(7rem, 22vw, 10.5rem);
+}
+
+.coversFan {
+  justify-content: center;
+  padding: var(--space-6) 0 var(--space-2);
+}
+
+.coversFan .coverItem {
+  width: clamp(5rem, 15vw, 8.5rem);
+  margin-inline: calc(clamp(5rem, 15vw, 8.5rem) * -0.12);
+  transform: rotate(calc((var(--i) - 3) * 4deg)) translateY(calc(max(var(--i) - 3, 3 - var(--i)) * 6px));
+  transform-origin: 50% 120%;
+  transition: transform var(--duration-base) var(--ease-out);
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .coversFan .coverItem:hover,
+  .coversFan .coverItem:focus-within {
+    z-index: 1;
+    transform: rotate(0deg) translateY(-12px) scale(1.06);
+  }
+}
+
+.coverItem {
+  animation: rise 700ms var(--ease-out) both;
+  animation-delay: calc(var(--i) * 70ms);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    translate: 0 1.5rem;
+  }
+}
+
+.coverLink {
+  display: grid;
+  gap: var(--space-2);
+  text-decoration: none;
+}
+
+.coverLink:focus-visible {
+  outline-color: var(--highlight);
+}
+
+.coverCaption {
+  display: grid;
+}
+
+.coverMonth {
+  color: var(--highlight);
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.coverTitle {
+  color: var(--cream);
+  font-family: var(--font-heading);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+/* ---------------------------------------------------------------------------- Share */
+.share {
+  display: grid;
+  gap: var(--space-6);
+  padding: var(--space-5);
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: var(--radius-lg);
+  background: rgb(0 0 0 / 0.25);
+}
+
+@media (min-width: 56em) {
+  .share {
+    grid-template-columns: minmax(0, 22rem) 1fr;
+    align-items: start;
+  }
+}
+
+.preview {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.canvas {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  border-radius: var(--radius-md);
+  background: #1c3b3a;
+}
+
+.previewCaption {
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+
+.shareControls {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-4);
+}
+
+.pickList {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.pickLegend {
+  margin-bottom: var(--space-2);
+  color: var(--cream);
+  font-weight: var(--font-semibold);
+}
+
+.pickLegend span {
+  color: var(--muted);
+  font-weight: var(--font-regular);
+}
+
+.pickList ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  gap: 2px var(--space-4);
+  max-height: 16rem;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pick {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2.25rem;
+  color: var(--cream);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.pick input {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--highlight);
+}
+
+.pick:has(input:disabled) {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.shareNote {
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+
+/* ---------------------------------------------------------------------------- Below the fold */
+.section {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.sectionTitle {
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-border-subtle);
+  font-size: var(--text-xl);
+}
+
+.chart {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  align-items: end;
+  gap: var(--space-2);
+  height: 14rem;
+}
+
+.bar {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  justify-items: center;
+  height: 100%;
+}
+
+.barValue {
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.barFill {
+  align-self: end;
+  width: min(100%, 2.25rem);
+  min-height: 2px;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background: color-mix(in srgb, var(--color-progress) 70%, var(--color-bg-tertiary));
+  transition: block-size var(--duration-slow) var(--ease-out);
+}
+
+.bar[data-top='true'] .barFill {
+  background: var(--color-progress);
+}
+
+.bar[data-top='true'] .barValue {
+  color: var(--color-accent);
+}
+
+.bar[data-future='true'] .barFill {
+  background: repeating-linear-gradient(-45deg, var(--color-border-subtle) 0 3px, transparent 3px 6px);
+  min-height: 1.5rem;
+}
+
+.barLabel {
+  margin-top: var(--space-2);
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: var(--space-5);
+}
+
+.card {
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+  padding: var(--space-6);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+}
+
+.cardTitle {
+  font-size: var(--text-lg);
+}
+
+.cardNote {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+}
+
+.pageNumber {
+  color: var(--color-text-primary);
+  font-family: var(--font-heading);
+  font-size: var(--text-3xl);
+  font-weight: var(--font-bold);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.genreList {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.genre {
+  display: grid;
+  grid-template-columns: minmax(6rem, 9rem) 1fr auto;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.genreName {
+  overflow: hidden;
+  color: var(--color-text-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.genreTrack {
+  height: 0.5rem;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-tertiary);
+}
+
+.genreFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-progress);
+}
+
+.genreCount {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.timeline {
+  display: grid;
+  gap: var(--space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.monthGroup {
+  display: grid;
+  gap: var(--space-3);
+}
+
+@media (min-width: 48em) {
+  .monthGroup {
+    grid-template-columns: 9rem 1fr;
+  }
+}
+
+.monthName {
+  color: var(--color-text-tertiary);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.monthBooks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+  gap: var(--space-3);
+}
+
+.monthBook {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  color: inherit;
+  text-decoration: none;
+}
+
+.monthBook:hover {
+  background: var(--color-bg-tertiary);
+}
+
+.monthCover {
+  flex-shrink: 0;
+  width: 2.75rem;
+}
+
+.monthText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.monthTitle {
+  overflow: hidden;
+  color: var(--color-text-primary);
+  font-family: var(--font-heading);
+  font-weight: var(--font-medium);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.monthAuthor {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+}

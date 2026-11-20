@@ -1,0 +1,41 @@
+/* Fluid columns: content (cover width) decides the breakpoints, not device sizes. */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(clamp(7.5rem, 22vw, 10rem), 1fr));
+  gap: var(--space-8) var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.skeleton {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.skeletonCover,
+.skeletonLine {
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, var(--color-bg-tertiary) 0%, var(--color-bg-secondary) 50%, var(--color-bg-tertiary) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+.skeletonCover {
+  aspect-ratio: var(--cover-ratio);
+  margin-bottom: var(--space-1);
+}
+
+.skeletonLine {
+  height: 0.8rem;
+}
+
+.short {
+  width: 60%;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
