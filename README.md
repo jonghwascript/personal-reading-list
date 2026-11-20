@@ -212,14 +212,14 @@ Rate your implementation honestly. This self-awareness is part of the portfolio 
 
 ### Lighthouse Scores
 
-Measured with Lighthouse in **desktop** mode on the deployed site (https://jonghwascript.github.io/personal-reading-list/).
+Measured with Lighthouse on the deployed site (https://jonghwascript.github.io/personal-reading-list/). Mobile mode simulates a slower network and CPU, so its scores run lower.
 
-| Category | Score |
-|----------|-------|
-| Performance | 93 |
-| Accessibility | 100 |
-| Best Practices | 96 |
-| SEO | 100 |
+| Category | Desktop | Mobile |
+|----------|---------|--------|
+| Performance | 93 | 86 |
+| Accessibility | 100 | 100 |
+| Best Practices | 96 | 92 |
+| SEO | 100 | 91 |
 
 ### Strengths
 
@@ -230,7 +230,7 @@ Measured with Lighthouse in **desktop** mode on the deployed site (https://jongh
 ### Areas for Improvement
 
 - Stretch features not yet built: Goodreads CSV import, library search, manual dark-mode toggle, activity timeline, bulk actions.
-- Real-device testing on the deployed site (Lighthouse is green: 93 / 100 / 96 / 100).
+- Real-device testing on the deployed site. Lighthouse clears every target on desktop (93 / 100 / 96 / 100) and mobile (86 / 100 / 92 / 91), but mobile performance has the least headroom over the 85 target.
 - Main bundle size: GSAP is in the main chunk because the landing intro must run before first paint.
 
 ---
