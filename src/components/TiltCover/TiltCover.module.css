@@ -1,0 +1,46 @@
+.frame {
+  perspective: 800px;
+}
+
+.tilt {
+  position: relative;
+  border-radius: var(--radius-sm);
+  transform: rotateX(var(--tilt-x, 0)) rotateY(var(--tilt-y, 0)) translateZ(0);
+  transform-style: preserve-3d;
+  transition:
+    transform var(--duration-base) var(--ease-out),
+    box-shadow var(--duration-base) var(--ease-out);
+}
+
+.glare {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at var(--glare-x, 50%) 0%, rgb(255 255 255 / 0.22), transparent 60%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-base) ease;
+}
+
+/* Triggered by hovering the cover itself, or any ancestor marked data-tilt-trigger. */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .frame:hover .tilt,
+  :global([data-tilt-trigger]:hover) .tilt,
+  :global([data-tilt-trigger]:focus-visible) .tilt {
+    transform: rotateX(var(--tilt-x, 0)) rotateY(var(--tilt-y, 0)) translateY(-4px) scale(1.02);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .frame:hover .glare,
+  :global([data-tilt-trigger]:hover) .glare {
+    opacity: 1;
+  }
+}
+
+/* Reduced motion still gets a clear, static hover affordance. */
+@media (hover: hover) and (prefers-reduced-motion: reduce) {
+  .frame:hover .tilt,
+  :global([data-tilt-trigger]:hover) .tilt {
+    box-shadow: var(--shadow-lg);
+  }
+}
