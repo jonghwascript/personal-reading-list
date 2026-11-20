@@ -186,7 +186,18 @@ Short, concrete feedback ("the buttons should line up at the bottom", "the modal
 
 **2. Accessibility-First Reading Tracker**
 
-*(in progress)* Route-change focus management, live-region announcements for every optimistic update, a WCAG contrast test over the palette, keyboard-operable drag-and-drop, native `<dialog>` for confirmations and the edition picker, and `prefers-reduced-motion` respected by every animation.
+**Why I chose this:** Books are for everyone, and a reading app is used for long stretches — comfort settings matter as much as compliance.
+
+**How it enhances the product:** Beyond WCAG AA everywhere, readers can tune the app in **Account → Appearance & reading**: theme, **high contrast (WCAG AAA, ≥ 7:1 text)**, text size (112.5% / 125%), relaxed line and letter spacing, and the **OpenDyslexic** font — with a live preview. Choices are applied before first paint, and "System" follows the OS (`prefers-color-scheme`, `prefers-contrast`). A public [accessibility statement](https://jonghwascript.github.io/personal-reading-list/accessibility) lists what's built in, how it was checked and the known gaps.
+
+**Implementation highlights:**
+- Keyboard: `/` or Ctrl/⌘K searches the library from anywhere; arrow keys, Home and End move between books in a grid; `1`–`5` rate the open book (`0` clears); drag-and-drop works with Space and arrows.
+- Focus moves to each new page's heading (or the field the page is for); live regions announce saves, moves, undo and search counts.
+- Automated tests read the colour tokens and fail if any text/background pair drops below 4.5:1 — or 7:1 in high contrast — in light and dark.
+- Measured in a real browser: no horizontal scrolling at 320px on every main screen (fixing two overflows — the year-review month chart and the statement's shortcut table — that the measurement found).
+- OpenDyslexic is a separate chunk, fetched only by readers who choose it.
+
+**What I learned:** Claims need measurements. Writing the statement surfaced two things I had assumed and was wrong about (all touch targets 44px; no overflow at 320px), and both were corrected before publishing. Screen-reader testing with NVDA/VoiceOver is the honest next step.
 
 ---
 
@@ -204,7 +215,7 @@ Rate your implementation honestly. This self-awareness is part of the portfolio 
 | **Design quality** — Typography pairing, warm aesthetic, spacing, visual hierarchy, polish | /5 | |
 | **Responsive design** — Fully functional and well-designed across devices | /5 | |
 | **Performance** — Fast load, smooth scrolling, efficient cover image loading | /5 | Route-level code splitting; Supabase SDK loaded lazily; main bundle ≈ 178 KB gzip |
-| **Accessibility** — Keyboard nav, screen reader support, contrast | /5 | Automated WCAG AA contrast test for both themes |
+| **Accessibility** — Keyboard nav, screen reader support, contrast | /5 | AA contrast tests in both themes, AAA high-contrast mode, reading settings, keyboard shortcuts; not yet screen-reader tested |
 | **Edge case handling** — Empty states, errors, loading, missing data, large libraries | /5 | |
 | **Code quality** — Clean, maintainable, well-structured | /5 | 124 unit/integration tests plus an end-to-end flow test |
 | **Landing page** — Compelling, communicates value, visually polished | /5 | |
@@ -229,7 +240,7 @@ Measured with Lighthouse on the deployed site (https://jonghwascript.github.io/p
 
 ### Areas for Improvement
 
-- Stretch features not yet built: Goodreads CSV import, library search, manual dark-mode toggle, activity timeline, bulk actions.
+- Stretch features not yet built: Goodreads CSV import, activity timeline, bulk actions.
 - Real-device testing on the deployed site. Lighthouse clears every target on desktop (93 / 100 / 96 / 100) and mobile (86 / 100 / 92 / 91), but mobile performance has the least headroom over the 85 target.
 - Main bundle size: GSAP is in the main chunk because the landing intro must run before first paint.
 
@@ -242,7 +253,7 @@ Measured with Lighthouse on the deployed site (https://jonghwascript.github.io/p
 - **Auth email:** Supabase's built-in email service only delivers to project team members and is rate-limited; production needs custom SMTP.
 - **Currently Reading cards** use a smaller cover (88px) than the 145px grids.
 - **Year review sharing** produces an image only, not a public link.
-- **Accessibility differentiator** is still in progress (no high-contrast or dyslexia-font modes yet).
+- **Screen readers:** not yet tested with NVDA, JAWS, VoiceOver or TalkBack.
 
 ---
 
