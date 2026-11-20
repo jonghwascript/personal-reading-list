@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { GuestRepository } from '../data/guestRepository';
 import type { LibraryRepository } from '../data/repository';
 import { SupabaseRepository } from '../data/supabaseRepository';
+import { afterLoad } from '../lib/afterLoad';
 import { getSupabase, isSupabaseConfigured } from '../lib/supabase';
 
 export type SessionStatus = 'loading' | 'signed-out' | 'guest' | 'account';
@@ -63,26 +64,35 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [authReady, setAuthReady] = useState(!isSupabaseConfigured);
 
   useEffect(() => {
-    const pending = getSupabase();
-    if (!pending) return;
+    if (!isSupabaseConfigured) return;
     let unsubscribe = () => {};
     let cancelled = false;
-    pending
-      .then(async (sb) => {
-        if (cancelled) return;
-        setClient(sb);
-        const { data } = await sb.auth.getSession();
-        if (cancelled) return;
-        setSession(data.session);
-        const sub = sb.auth.onAuthStateChange((_event, next) => setSession(next));
-        unsubscribe = () => sub.data.subscription.unsubscribe();
-      })
-      .catch(() => undefined) // SDK failed to load (offline): carry on as signed-out/guest.
-      .finally(() => {
-        if (!cancelled) setAuthReady(true);
-      });
+    const check = () => {
+      if (cancelled) return;
+      getSupabase()!
+        .then(async (sb) => {
+          if (cancelled) return;
+          setClient(sb);
+          const { data } = await sb.auth.getSession();
+          if (cancelled) return;
+          setSession(data.session);
+          const sub = sb.auth.onAuthStateChange((_event, next) => setSession(next));
+          unsubscribe = () => sub.data.subscription.unsubscribe();
+        })
+        .catch(() => undefined) // SDK failed to load (offline): carry on as signed-out/guest.
+        .finally(() => {
+          if (!cancelled) setAuthReady(true);
+        });
+    };
+    // The landing page only needs the session for its nav button, and guests don't need it at all,
+    // so there the ~55 KB SDK waits until the page has loaded instead of competing with its first
+    // paint. Everywhere else (e.g. a signed-in reader opening /library directly) it starts at once.
+    const path = window.location.pathname;
+    const canWait = path === import.meta.env.BASE_URL || path.endsWith('/guest') || readGuestFlag();
+    const cancelDeferred = canWait ? afterLoad(check) : (check(), () => {});
     return () => {
       cancelled = true;
+      cancelDeferred();
       unsubscribe();
     };
   }, []);

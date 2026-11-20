@@ -77,7 +77,9 @@ export function LandingPage() {
   const chaptersRef = useRef<HTMLElement>(null);
 
   // Intro: copy rises line by line while the spines are slid onto their planks, left to right.
-  // useGSAP runs before first paint, so nothing flashes; reduced motion skips it entirely.
+  // useGSAP runs before first paint, so nothing flashes; reduced motion skips it entirely. The
+  // headline and lede only move — never fade from 0 — so they still count as painted at once
+  // (they are the page's Largest Contentful Paint).
   useGSAP(
     () => {
       if (!canAnimate()) return;
@@ -85,8 +87,9 @@ export function LandingPage() {
       gsap
         .timeline({ defaults: { ease: 'power3.out' } })
         .from(q('[data-enter="kicker"]'), { y: 14, opacity: 0, duration: 0.5 })
-        .from(q('[data-enter="line"]'), { y: 32, opacity: 0, duration: 0.8, stagger: 0.12 }, '-=0.2')
-        .from(q('[data-enter="lede"], [data-enter="ledger"]'), { y: 16, opacity: 0, duration: 0.6, stagger: 0.1 }, '-=0.45')
+        .from(q('[data-enter="line"]'), { y: 24, duration: 0.8, stagger: 0.12 }, '-=0.2')
+        .from(q('[data-enter="lede"]'), { y: 12, duration: 0.6 }, '-=0.45')
+        .from(q('[data-enter="ledger"]'), { y: 16, opacity: 0, duration: 0.6 }, '-=0.4')
         .from(q('[data-enter="cta"] > *'), { y: 14, opacity: 0, duration: 0.5, stagger: 0.08 }, '-=0.35')
         .from(q('[data-enter="spine"]'), { yPercent: 105, duration: 0.7, ease: 'back.out(1.4)', stagger: { each: 0.03, from: 'start' } }, 0.15);
     },
@@ -242,7 +245,8 @@ function Book3D({ sample }: { sample: Sample }) {
   return (
     <div className={styles.book} data-book="" style={spineStyle(title, sample.pageCount)}>
       <div className={styles.bookFront}>
-        <BookCover book={{ title, authors: [sample.author], coverUrl: sample.coverUrl }} size="L" />
+        {/* M is plenty at this size, and keeps these below-the-fold covers off the first paint's network. */}
+        <BookCover book={{ title, authors: [sample.author], coverUrl: sample.coverUrl }} size="M" />
       </div>
       <div className={styles.bookSpine}>
         <SpineFace title={title} author={sample.author} />

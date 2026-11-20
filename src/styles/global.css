@@ -3,6 +3,35 @@
 /* Reader preferences (text size, spacing, font, high contrast) override tokens; keep after them. */
 @import './preferences.css';
 
+/*
+ * Self-hosted variable fonts (latin subset, SIL OFL — see public/fonts/OFL.txt). Same origin as the
+ * app, so there's no extra connection before the first paint, and index.html preloads the two
+ * upright files so they're usually ready before React renders any text.
+ */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/inter-latin-wght.woff2') format('woff2-variations'), url('/fonts/inter-latin-wght.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/lora-latin-wght.woff2') format('woff2-variations'), url('/fonts/lora-latin-wght.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/lora-latin-wght-italic.woff2') format('woff2-variations'), url('/fonts/lora-latin-wght-italic.woff2') format('woff2');
+}
+
 :root {
   --color-focus: var(--color-accent);
   --color-on-accent: #ffffff;
