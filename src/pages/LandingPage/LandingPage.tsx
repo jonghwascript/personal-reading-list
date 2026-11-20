@@ -1,51 +1,82 @@
-import { ArrowRight, BookMarked, ChartNoAxesColumn, Search, Target } from 'lucide-react';
-import { useRef, type PointerEvent } from 'react';
+import { ArrowRight } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import sampleBooks from '../../../data/sample-books.json';
 import { BookCover } from '../../components/BookCover/BookCover';
 import { Logo } from '../../components/Logo/Logo';
-import { TiltCover } from '../../components/TiltCover/TiltCover';
+import { SpineFace, spineStyle } from '../../components/SpineShelf/SpineShelf';
 import { Button, ButtonLink } from '../../components/ui/Button';
 import { canAnimate, gsap, useGSAP } from '../../lib/motion';
 import { usePageTitle } from '../../lib/usePageTitle';
 import { useSession } from '../../state/SessionContext';
 import styles from './LandingPage.module.css';
 
-type Sample = { title: string; author: string; coverUrl: string | null };
+type Sample = { title: string; author: string; coverUrl: string | null; pageCount: number | null };
 const books = sampleBooks as Sample[];
-const pick = (title: string) => {
-  const b = books.find((s) => s.title.startsWith(title))!;
-  return { title: b.title, authors: [b.author], coverUrl: b.coverUrl };
-};
+const pick = (title: string) => books.find((s) => s.title.startsWith(title))!;
 
-// Hand-picked for colour variety across the collage; Piranesi shows off the styled placeholder.
-const HERO = ['Project Hail Mary', 'Circe', 'The Great Gatsby', 'Dune', 'Educated', 'Piranesi', 'The Fifth Season', 'Atomic Habits', 'Normal People'].map(pick);
+/** The hero shelf: two planks of real sample books, in an order that mixes colours and heights. */
+const SHELF_ROWS = [
+  ['The Great Gatsby', 'Circe', 'Dune', 'Beloved', 'Normal People', 'Neuromancer', 'Educated', 'The Road', 'Piranesi', '1984', 'Range', 'The Fifth Season', 'Born a Crime'],
+  ['Project Hail Mary', 'Quiet', 'The Left Hand of Darkness', 'Atomic Habits', 'The Name of the Wind', 'Deep Work', 'Pride and Prejudice', 'Children of Time', 'Sapiens', 'The Dispossessed', 'Ancillary Justice', 'A Gentleman in Moscow'],
+].map((row) => row.map(pick));
+
+/** A couple of books lean on their neighbours, the way real shelves never stand perfectly straight. */
+const LEANING: Record<string, string> = { Piranesi: '-7deg', 'Children of Time': '6deg' };
+
 /**
- * How far each hero cover drifts with the mouse (1 = average). Mixed values make the collage read
- * as layered in depth rather than as one flat picture.
+ * What Bookshelf does, told one book at a time (the A24 / Stripe Press idea: objects that turn as
+ * you scroll). Each chapter's book arrives spine-first and turns to show its cover; the ledger
+ * beside it reads like a library catalogue card.
  */
-const DEPTHS = [1.3, 0.7, 1.0, 0.8, 1.45, 0.9, 1.15, 0.6, 1.2];
-/** Each cover's starting spin in the intro, so they land like books tossed onto a table. */
-const ENTER_SPIN = [-8, 5, -4, 7, -6, 4, -5, 8, -3];
-
-const SHELF = ['Neuromancer', 'Born a Crime', 'The Left Hand of Darkness', 'The Pragmatic Programmer', '1984', 'Beloved'].map(pick);
-
-const FEATURES = [
-  { Icon: Search, title: 'Find any book', body: 'Search millions of titles by name, author or ISBN — covers and details filled in for you.' },
-  { Icon: BookMarked, title: 'Shelves that feel like yours', body: 'Want to Read, Currently Reading, Read — plus shelves for favourites, book clubs and loans.' },
-  { Icon: Target, title: 'Goals without guilt', body: 'Set a yearly target and see, at a glance, whether you’re ahead, on track, or due a short read.' },
-  { Icon: ChartNoAxesColumn, title: 'Your year in books', body: 'Books per month, genres, pages and pace — a reading year worth looking back on.' },
-];
+const CHAPTERS = [
+  {
+    book: 'Project Hail Mary',
+    title: 'Find any book',
+    body: 'Search Open Library by title, author or ISBN. Choose the edition you own, and the page count every percentage is built on comes with it.',
+    ledger: [
+      ['Search by', 'Title · Author · ISBN'],
+      ['Editions', 'Pick yours when there are several'],
+    ],
+  },
+  {
+    book: 'Circe',
+    title: 'Shelve it your way',
+    body: 'Want to Read, Currently Reading, Read — and shelves of your own. Drag a book to move it, or see any shelf side-on, as spines.',
+    ledger: [
+      ['Move', 'Drag, keyboard, or one menu'],
+      ['Undo', 'Every move'],
+    ],
+  },
+  {
+    book: 'Piranesi',
+    title: 'Log a page in seconds',
+    body: 'The last page you read, a percentage, or where you paused the audiobook. One field, a few seconds to undo, and a clear “Mark as finished” at the end.',
+    ledger: [
+      ['Formats', 'Print · E-book · Audio'],
+      ['Streaks', 'None. No guilt.'],
+    ],
+  },
+  {
+    book: 'Dune',
+    title: 'Look back on your year',
+    body: 'Books per month, genres, pages and your goal, told as a short scroll story — with a card to share when the year is done.',
+    ledger: [
+      ['Goal', 'Yearly, and yours to change'],
+      ['Share', 'An image card'],
+    ],
+  },
+].map((c) => ({ ...c, sample: pick(c.book) }));
 
 export function LandingPage() {
   usePageTitle('');
   const { status, startGuest } = useSession();
   const navigate = useNavigate();
   const inSession = status === 'guest' || status === 'account';
-  const collageRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLElement>(null);
+  const chaptersRef = useRef<HTMLElement>(null);
 
-  // Intro timeline: copy rises line by line while the covers spring up from the centre outward.
+  // Intro: copy rises line by line while the spines are slid onto their planks, left to right.
   // useGSAP runs before first paint, so nothing flashes; reduced motion skips it entirely.
   useGSAP(
     () => {
@@ -55,39 +86,14 @@ export function LandingPage() {
         .timeline({ defaults: { ease: 'power3.out' } })
         .from(q('[data-enter="kicker"]'), { y: 14, opacity: 0, duration: 0.5 })
         .from(q('[data-enter="line"]'), { y: 32, opacity: 0, duration: 0.8, stagger: 0.12 }, '-=0.2')
-        .from(q('[data-enter="lede"]'), { y: 16, opacity: 0, duration: 0.6 }, '-=0.45')
+        .from(q('[data-enter="lede"], [data-enter="ledger"]'), { y: 16, opacity: 0, duration: 0.6, stagger: 0.1 }, '-=0.45')
         .from(q('[data-enter="cta"] > *'), { y: 14, opacity: 0, duration: 0.5, stagger: 0.08 }, '-=0.35')
-        .from(q('[data-enter="note"]'), { opacity: 0, duration: 0.5 }, '-=0.2')
-        .from(
-          q('[data-enter="cover"]'),
-          {
-            y: 80,
-            opacity: 0,
-            scale: 0.88,
-            rotate: (i: number) => ENTER_SPIN[i] ?? 0,
-            duration: 1,
-            ease: 'back.out(1.3)',
-            stagger: { each: 0.07, from: 'center' },
-          },
-          0.1,
-        );
+        .from(q('[data-enter="spine"]'), { yPercent: 105, duration: 0.7, ease: 'back.out(1.4)', stagger: { each: 0.03, from: 'start' } }, 0.15);
     },
     { scope: heroRef },
   );
 
-  // Mouse parallax: the hero reports where the pointer is (-0.5…0.5) and CSS turns that into a gentle
-  // 3D turn of the collage plus per-cover depth shifts. CSS variables only — no re-renders.
-  const onHeroPointerMove = (e: PointerEvent<HTMLElement>) => {
-    const el = collageRef.current;
-    if (!el || e.pointerType !== 'mouse') return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    el.style.setProperty('--px', ((e.clientX - rect.left) / rect.width - 0.5).toFixed(3));
-    el.style.setProperty('--py', ((e.clientY - rect.top) / rect.height - 0.5).toFixed(3));
-  };
-  const onHeroPointerLeave = () => {
-    collageRef.current?.style.removeProperty('--px');
-    collageRef.current?.style.removeProperty('--py');
-  };
+  useChapterMotion(chaptersRef);
 
   const tryGuest = () => {
     startGuest();
@@ -120,7 +126,7 @@ export function LandingPage() {
       </header>
 
       <main id="main">
-        <section ref={heroRef} className={styles.hero} aria-labelledby="hero-title" onPointerMove={onHeroPointerMove} onPointerLeave={onHeroPointerLeave}>
+        <section ref={heroRef} className={styles.hero} aria-labelledby="hero-title">
           <div className={styles.heroCopy}>
             <p className={styles.kicker} data-enter="kicker">
               A personal reading tracker
@@ -129,12 +135,26 @@ export function LandingPage() {
               <span className={styles.heroLine} data-enter="line">
                 Your reading life,
               </span>{' '}
-              <em data-enter="line">beautifully organized.</em>
+              <em data-enter="line">shelved.</em>
             </h1>
             <p className={styles.heroLede} data-enter="lede">
               Track what you’re reading, shelve what you’ve loved, and watch your year in books take shape. No feeds, no
               ads, no strangers’ opinions — just you and your books.
             </p>
+            <dl className={styles.ledger} data-enter="ledger">
+              <div>
+                <dt>Shelves</dt>
+                <dd>Want to Read · Reading · Read · your own</dd>
+              </div>
+              <div>
+                <dt>Progress</dt>
+                <dd>Pages, percent or listening time</dd>
+              </div>
+              <div>
+                <dt>Cost</dt>
+                <dd>Free. No account needed to try.</dd>
+              </div>
+            </dl>
             <div className={styles.ctas} data-enter="cta">
               <ButtonLink to="/signup" variant="primary" size="lg">
                 Sign up — it’s free
@@ -143,71 +163,52 @@ export function LandingPage() {
                 Try as guest
               </Button>
             </div>
-            <p className={styles.ctaNote} data-enter="note">
-              The guest library comes stocked with 45 real books. No account needed.
-            </p>
+            <p className={styles.ctaNote}>The guest library comes stocked with 45 real books.</p>
           </div>
 
-          <div className={styles.stage} aria-hidden="true">
-            <div ref={collageRef} className={styles.collage}>
-              {HERO.map((book, i) => (
-                <div key={book.title} className={styles.collageItem} style={{ '--i': i, '--depth': DEPTHS[i] } as React.CSSProperties}>
-                  <div data-enter="cover">
-                    <div className={styles.float}>
-                      <TiltCover>
-                        <BookCover book={book} size="M" priority={i < 6} />
-                      </TiltCover>
+          <div className={styles.shelf} aria-hidden="true">
+            {SHELF_ROWS.map((row, r) => (
+              <div key={r} className={styles.plank}>
+                {row.map((b) => (
+                  <div key={b.title} className={styles.slot} style={spineStyle(b.title, b.pageCount)}>
+                    <div className={styles.heroSpine} data-enter="spine" style={{ rotate: LEANING[b.title.split(':')[0]!] }}>
+                      <SpineFace title={b.title.split(':')[0]!} author={b.author} />
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ))}
           </div>
         </section>
 
-        <section className={styles.features} aria-labelledby="features-title">
-          <h2 id="features-title" className="u-sr-only">
+        <section ref={chaptersRef} className={styles.chapters} aria-labelledby="chapters-title">
+          <h2 id="chapters-title" className="u-sr-only">
             What Bookshelf does
           </h2>
-          <ul role="list" className={styles.featureList}>
-            {FEATURES.map(({ Icon, title, body }) => (
-              <li key={title} className={styles.feature}>
-                <span className={styles.featureIcon} aria-hidden="true">
-                  <Icon size={22} />
-                </span>
-                <h3 className={styles.featureTitle}>{title}</h3>
-                <p>{body}</p>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section className={styles.showcase} aria-labelledby="showcase-title">
-          <div className={styles.showcaseCopy}>
-            <h2 id="showcase-title" className={styles.sectionTitle}>
-              A library that looks as good as the one at home
-            </h2>
-            <p>
-              Real covers, warm typography, and room to breathe. Missing covers get a hand-set placeholder instead of a
-              broken image, so every shelf keeps its rhythm.
-            </p>
-          </div>
-          <figure className={styles.mock}>
-            <div className={styles.mockHeader}>
-              <span className={styles.mockTitle}>Read this year</span>
-              <span className={styles.mockGoal}>
-                <span className={styles.mockGoalValue}>21</span> of 24 · On track
-              </span>
-            </div>
-            <div className={styles.mockShelf}>
-              {SHELF.map((book) => (
-                <div key={book.title} className={styles.mockBook}>
-                  <BookCover book={book} size="M" />
-                </div>
-              ))}
-            </div>
-            <figcaption className="u-sr-only">A preview of a Read shelf with six book covers and a reading goal of 21 of 24 books.</figcaption>
-          </figure>
+          {CHAPTERS.map((c, i) => (
+            <article key={c.title} className={styles.chapter} data-chapter="" aria-labelledby={`chapter-${i}`}>
+              <div className={styles.chapterCopy} data-chapter-copy="">
+                <p className={styles.chapterNumber} aria-hidden="true">
+                  {String(i + 1).padStart(2, '0')}
+                </p>
+                <h3 id={`chapter-${i}`} className={styles.chapterTitle}>
+                  {c.title}
+                </h3>
+                <p className={styles.chapterBody}>{c.body}</p>
+                <dl className={styles.ledger}>
+                  {c.ledger.map(([term, value]) => (
+                    <div key={term}>
+                      <dt>{term}</dt>
+                      <dd>{value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+              <div className={styles.stage} aria-hidden="true">
+                <Book3D sample={c.sample} />
+              </div>
+            </article>
+          ))}
         </section>
 
         <section className={styles.closing} aria-labelledby="closing-title">
@@ -233,4 +234,48 @@ export function LandingPage() {
       </footer>
     </div>
   );
+}
+
+/** A book with real depth: cover in front, cloth spine on the left, page edges on the right. */
+function Book3D({ sample }: { sample: Sample }) {
+  const title = sample.title.split(':')[0]!;
+  return (
+    <div className={styles.book} data-book="" style={spineStyle(title, sample.pageCount)}>
+      <div className={styles.bookFront}>
+        <BookCover book={{ title, authors: [sample.author], coverUrl: sample.coverUrl }} size="L" />
+      </div>
+      <div className={styles.bookSpine}>
+        <SpineFace title={title} author={sample.author} />
+      </div>
+      <div className={styles.bookPages} />
+    </div>
+  );
+}
+
+/**
+ * As each chapter scrolls up, its book turns from spine-on to cover-on and its copy rises in.
+ * Scrubbed to the scroll position, so scrolling back turns it back. ScrollTrigger is fetched on
+ * demand to keep it out of the landing bundle; without motion the books simply rest at an angle.
+ */
+function useChapterMotion(scope: React.RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    if (!canAnimate() || !scope.current) return;
+    let ctx: gsap.Context | undefined;
+    let cancelled = false;
+    void import('gsap/ScrollTrigger').then(({ ScrollTrigger }) => {
+      if (cancelled || !scope.current) return;
+      gsap.registerPlugin(ScrollTrigger);
+      ctx = gsap.context(() => {
+        gsap.utils.toArray<HTMLElement>('[data-chapter]').forEach((chapter) => {
+          const scrollTrigger = { trigger: chapter, start: 'top 85%', end: 'center 55%', scrub: 0.6 };
+          gsap.fromTo(chapter.querySelector('[data-book]'), { rotateY: 88, y: 48 }, { rotateY: 18, y: 0, ease: 'power2.out', scrollTrigger });
+          gsap.from(chapter.querySelector('[data-chapter-copy]'), { opacity: 0, y: 32, ease: 'power2.out', scrollTrigger: { ...scrollTrigger, end: 'top 45%' } });
+        });
+      }, scope.current);
+    });
+    return () => {
+      cancelled = true;
+      ctx?.revert();
+    };
+  }, [scope]);
 }

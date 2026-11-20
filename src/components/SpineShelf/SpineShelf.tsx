@@ -38,13 +38,13 @@ export function SpineShelf({ entries, label, showProgress = false }: SpineShelfP
 }
 
 /** Thin paperbacks to doorstops: 1.75rem at 0 pages up to 3.5rem at 900+. Unknown → a mid-size book. */
-function thicknessFor(pages: number | null): string {
+export function thicknessFor(pages: number | null): string {
   if (!pages) return '2.4rem';
   return `${(1.75 + (Math.min(pages, 900) / 900) * 1.75).toFixed(2)}rem`;
 }
 
 /** Trim heights vary between 84% and 100% of a cover's height, stable per title. */
-function heightFor(title: string): string {
+export function heightFor(title: string): string {
   let hash = 7;
   for (const ch of title) hash = (hash * 33 + ch.charCodeAt(0)) >>> 0;
   return `${84 + (hash % 17)}%`;
@@ -59,11 +59,6 @@ function Spine({ entry, showProgress }: { entry: LibraryEntry; showProgress: boo
   const author = book.authors.length ? formatAuthors(book.authors) : null;
 
   const label = [book.title, author ? `by ${author}` : null, percent != null ? `${Math.round(percent)}% read` : null].filter(Boolean).join(', ');
-  const style = {
-    '--tone': toneFor(book.title),
-    '--thickness': thicknessFor(entry.totalPages ?? book.pageCount),
-    '--height': heightFor(book.title),
-  } as CSSProperties;
 
   return (
     <Link
@@ -72,22 +67,28 @@ function Spine({ entry, showProgress }: { entry: LibraryEntry; showProgress: boo
       to={to}
       onClick={(e) => openWithCoverTransition(e, () => navigate(to))}
       className={styles.spine}
-      style={style}
+      style={spineStyle(book.title, entry.totalPages ?? book.pageCount)}
       data-dragging={drag.isDragging || undefined}
       data-landed={drag.landed || undefined}
       aria-label={label}
     >
-      <span className={styles.cloth} data-cover-source="">
-        <span className={styles.title} aria-hidden="true">
-          {book.title}
-        </span>
-        {author && (
-          <span className={styles.author} aria-hidden="true">
-            {book.authors[0]}
-          </span>
-        )}
-        {percent != null && <span className={styles.progress} style={{ blockSize: `${Math.max(2, percent)}%` }} aria-hidden="true" />}
-      </span>
+      <SpineFace title={book.title} author={book.authors[0] ?? null} percent={percent} />
     </Link>
+  );
+}
+
+/** Size and colour variables for a spine: put on the element that holds a SpineFace. */
+export function spineStyle(title: string, pages: number | null): CSSProperties {
+  return { '--tone': toneFor(title), '--thickness': thicknessFor(pages), '--height': heightFor(title) } as CSSProperties;
+}
+
+/** The cloth itself — title, author, optional progress ribbon. Decorative; the holder names the book. */
+export function SpineFace({ title, author, percent = null, className }: { title: string; author: string | null; percent?: number | null; className?: string }) {
+  return (
+    <span className={[styles.cloth, className].filter(Boolean).join(' ')} data-cover-source="" aria-hidden="true">
+      <span className={styles.title}>{title}</span>
+      {author && <span className={styles.author}>{author}</span>}
+      {percent != null && <span className={styles.progress} style={{ blockSize: `${Math.max(2, percent)}%` }} />}
+    </span>
   );
 }
