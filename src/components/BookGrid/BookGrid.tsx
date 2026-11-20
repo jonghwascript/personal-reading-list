@@ -15,7 +15,8 @@ export function BookGrid({ entries, showProgress, priorityCount = 0, label }: Bo
   return (
     <ul className={styles.grid} role="list" aria-label={label}>
       {entries.map((entry, i) => (
-        <li key={entry.id}>
+        // data-flip-id lets useFlipGrid follow each book across re-orders.
+        <li key={entry.id} data-flip-id={entry.id}>
           <BookCard
             entry={entry}
             showProgress={showProgress ?? (entry.progress?.percent != null && entry.progress.percent < 100 && !entry.finishedAt)}

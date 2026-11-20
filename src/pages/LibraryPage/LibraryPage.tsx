@@ -12,6 +12,7 @@ import { Button } from '../../components/ui/Button';
 import { formatAuthors, pluralize } from '../../lib/format';
 import { booksFinishedInYear } from '../../lib/goal';
 import { authorsIn, filterEntries, genresIn, sortEntries, type EntryFilter } from '../../lib/libraryRules';
+import { useFlipGrid } from '../../lib/motion';
 import { usePageTitle } from '../../lib/usePageTitle';
 import { useLibrary } from '../../state/LibraryContext';
 import { useSession } from '../../state/SessionContext';
@@ -36,6 +37,12 @@ export function LibraryPage() {
   const { shelves, entries } = useLibrary();
   const { status } = useSession();
   const [filter, setFilter] = useState<EntryFilter>({});
+  // Changing filters glides matching books into place; new matches fade in.
+  const flip = useFlipGrid();
+  const changeFilter = (next: EntryFilter) => {
+    flip.capture();
+    setFilter(next);
+  };
   const year = new Date().getFullYear();
 
   const readingShelf = shelves.find((s) => s.kind === 'reading');
@@ -117,9 +124,9 @@ export function LibraryPage() {
             Browse your library
           </h2>
         </div>
-        <LibraryFilters filter={filter} onChange={setFilter} />
+        <LibraryFilters filter={filter} onChange={changeFilter} />
         {filterActive && (
-          <div className={styles.filterResults}>
+          <div className={styles.filterResults} ref={flip.ref}>
             <p className={styles.resultCount} role="status">
               {pluralize(filtered.length, 'book')} match
             </p>
@@ -130,7 +137,7 @@ export function LibraryPage() {
                 title="No books match these filters"
                 headingLevel="h3"
                 action={
-                  <Button variant="secondary" onClick={() => setFilter({})}>
+                  <Button variant="secondary" onClick={() => changeFilter({})}>
                     Clear filters
                   </Button>
                 }

@@ -12,6 +12,7 @@ import { useAnnouncer } from '../../state/AnnouncerContext';
 import { useLibrary } from '../../state/LibraryContext';
 import type { LibraryEntry } from '../../types';
 import styles from './YearReviewPage.module.css';
+import { useReviewMotion } from './useReviewMotion';
 
 /**
  * Design challenge #1. Starts from the books themselves — covers and one sentence — so a reader
@@ -25,6 +26,9 @@ export function YearReviewPage() {
   usePageTitle(`${year} in books`);
 
   const review = useMemo(() => buildYearReview(entries, year, now), [entries, year]); // eslint-disable-line react-hooks/exhaustive-deps
+  const pageRef = useRef<HTMLDivElement>(null);
+  // Re-run the scroll story when the year or its book count changes.
+  useReviewMotion(pageRef, `${year}:${review.finished.length}`);
   const years = useMemo(() => {
     const set = new Set(yearsWithFinishedBooks(entries));
     set.add(now.getFullYear());
@@ -37,13 +41,13 @@ export function YearReviewPage() {
   const next = years.find((y) => y > year);
 
   return (
-    <div className={styles.page}>
+    <div className={styles.page} ref={pageRef}>
       <Hero review={review} prev={prev} next={next} />
       {review.finished.length > 0 ? (
         <>
           <MonthChart review={review} />
           {(review.genres || review.pages) && (
-            <div className={styles.facts}>
+            <div className={styles.facts} data-anim="reveal">
               {review.genres && <GenreBreakdown genres={review.genres} total={review.finished.length} />}
               {review.pages && <PageTotal pages={review.pages} />}
             </div>
@@ -94,7 +98,11 @@ function Hero({ review, prev, next }: { review: YearReview; prev?: number; next?
           )
         ) : (
           <>
-            <span className={styles.bigNumber}>{n}</span> {n === 1 ? 'book' : 'books'} finished
+            {/* The visible number counts up (aria-hidden); assistive tech reads the final value at once. */}
+            <span className={styles.bigNumber} aria-hidden="true" data-anim="count" data-count={n}>
+              {n}
+            </span>
+            <span className="u-sr-only">{n}</span> {n === 1 ? 'book' : 'books'} finished
           </>
         )}
       </h1>
@@ -251,13 +259,13 @@ function MonthChart({ review }: { review: YearReview }) {
       <h2 id="months-title" className={styles.sectionTitle}>
         Month by month
       </h2>
-      <div className={styles.chart} aria-hidden="true">
+      <div className={styles.chart} aria-hidden="true" data-anim="chart">
         {review.byMonth.map((count, m) => {
           const future = m >= review.monthsElapsed;
           return (
             <div key={m} className={styles.bar} data-future={future} data-top={review.topMonth?.month === m}>
               <span className={styles.barValue}>{future ? '' : count}</span>
-              <span className={styles.barFill} style={{ blockSize: `${(count / max) * 100}%` }} />
+              <span className={styles.barFill} data-anim="bar" style={{ blockSize: `${(count / max) * 100}%` }} />
               <span className={styles.barLabel}>{MONTHS[m]!.slice(0, 3)}</span>
             </div>
           );
@@ -296,7 +304,7 @@ function GenreBreakdown({ genres, total }: { genres: NonNullable<YearReview['gen
           <li key={genre} className={styles.genre}>
             <span className={styles.genreName}>{genre}</span>
             <span className={styles.genreTrack} aria-hidden="true">
-              <span className={styles.genreFill} style={{ inlineSize: `${(count / total) * 100}%` }} />
+              <span className={styles.genreFill} data-anim="genre" style={{ inlineSize: `${(count / total) * 100}%` }} />
             </span>
             <span className={styles.genreCount}>{pluralize(count, 'book')}</span>
           </li>
@@ -312,7 +320,12 @@ function PageTotal({ pages }: { pages: NonNullable<YearReview['pages']> }) {
       <h2 id="pages-title" className={styles.cardTitle}>
         Pages turned
       </h2>
-      <p className={styles.pageNumber}>{pages.total.toLocaleString()}</p>
+      <p className={styles.pageNumber}>
+        <span aria-hidden="true" data-anim="count-on-scroll" data-count={pages.total}>
+          {pages.total.toLocaleString()}
+        </span>
+        <span className="u-sr-only">{pages.total.toLocaleString()}</span>
+      </p>
       <p className={styles.cardNote}>
         {pages.known === pages.of
           ? `Across all ${countWord(pages.of)} books.`
@@ -335,7 +348,7 @@ function BooksByMonth({ review }: { review: YearReview }) {
       </h2>
       <ol className={styles.timeline}>
         {[...groups.entries()].map(([month, list]) => (
-          <li key={month} className={styles.monthGroup}>
+          <li key={month} className={styles.monthGroup} data-anim="reveal">
             <h3 className={styles.monthName}>{MONTHS[month]}</h3>
             <ul role="list" className={styles.monthBooks}>
               {list.map((e) => (

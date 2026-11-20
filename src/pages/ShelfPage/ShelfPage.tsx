@@ -7,6 +7,7 @@ import { Button, ButtonLink } from '../../components/ui/Button';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { pluralize } from '../../lib/format';
 import { filterEntries, genresIn, sortEntries, type SortKey } from '../../lib/libraryRules';
+import { useFlipGrid } from '../../lib/motion';
 import { usePageTitle } from '../../lib/usePageTitle';
 import { useAnnouncer } from '../../state/AnnouncerContext';
 import { useLibrary } from '../../state/LibraryContext';
@@ -37,6 +38,8 @@ export function ShelfPage() {
 
   const [sort, setSort] = useState<SortKey>(shelf?.kind === 'read' ? 'finished' : 'added');
   const [genre, setGenre] = useState('');
+  // Sorting and filtering glide books to their new places instead of snapping (animated-shelf differentiator).
+  const flip = useFlipGrid();
   const [renaming, setRenaming] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -113,7 +116,10 @@ export function ShelfPage() {
           <div className={page.toolbar}>
             <label className={page.field}>
               Sort by
-              <select className={page.select} value={sort} onChange={(e) => setSort(e.target.value as SortKey)}>
+              <select className={page.select} value={sort} onChange={(e) => {
+                  flip.capture();
+                  setSort(e.target.value as SortKey);
+                }}>
                 {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
                   <option key={key} value={key}>
                     {SORT_LABELS[key]}
@@ -124,7 +130,10 @@ export function ShelfPage() {
             {genres.length > 1 && (
               <label className={page.field}>
                 Genre
-                <select className={page.select} value={genre} onChange={(e) => setGenre(e.target.value)}>
+                <select className={page.select} value={genre} onChange={(e) => {
+                    flip.capture();
+                    setGenre(e.target.value);
+                  }}>
                   <option value="">All genres</option>
                   {genres.map((g) => (
                     <option key={g}>{g}</option>
@@ -134,7 +143,9 @@ export function ShelfPage() {
             )}
           </div>
           {visible.length > 0 ? (
-            <BookGrid entries={visible} label={shelf.name} priorityCount={8} showProgress={shelf.kind === 'reading'} />
+            <div ref={flip.ref}>
+              <BookGrid entries={visible} label={shelf.name} priorityCount={8} showProgress={shelf.kind === 'reading'} />
+            </div>
           ) : (
             <p className={styles.noMatch} role="status">
               No {genre} books on this shelf. <button type="button" onClick={() => setGenre('')}>Show all genres</button>
