@@ -1,7 +1,8 @@
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { Flip } from 'gsap/Flip';
-import { useCallback, useEffect, useLayoutEffect, useRef, type RefObject } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, type MouseEvent, type RefObject } from 'react';
+import { flushSync } from 'react-dom';
 
 /*
  * GSAP is used for choreography CSS can't express well: grid re-layout (Flip), scroll-driven
@@ -171,4 +172,35 @@ export function useFlipGrid<T extends HTMLElement = HTMLDivElement>() {
   });
 
   return { ref, capture };
+}
+
+/** The view-transition-name shared by the book you open and the cover on its detail page. */
+export const COVER_TRANSITION = 'book-cover';
+
+/**
+ * Opening a book from a shelf: the cover (or spine) you clicked is pulled off the shelf and becomes
+ * the detail page's cover, via the View Transitions API. Call from the link's onClick; it takes
+ * over the navigation only when it can animate (supported browser, motion allowed, a plain click)
+ * and otherwise leaves the link to navigate as usual. The detail page is a lazy chunk, so the
+ * transition waits for its cover (`data-cover-target`) to render before the browser captures it.
+ */
+export function openWithCoverTransition(e: MouseEvent<HTMLAnchorElement>, open: () => void) {
+  if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  const source = e.currentTarget.querySelector<HTMLElement>('[data-cover-source]');
+  if (!source || typeof document.startViewTransition !== 'function' || !canAnimate()) return;
+  e.preventDefault();
+  source.style.viewTransitionName = COVER_TRANSITION;
+  document.startViewTransition(async () => {
+    source.style.viewTransitionName = '';
+    flushSync(open);
+    await waitFor(() => document.querySelector('[data-cover-target]') !== null, 1500);
+  });
+}
+
+function waitFor(check: () => boolean, timeoutMs: number): Promise<void> {
+  const start = performance.now();
+  return new Promise((resolve) => {
+    const tick = () => (check() || performance.now() - start > timeoutMs ? resolve() : requestAnimationFrame(tick));
+    tick();
+  });
 }

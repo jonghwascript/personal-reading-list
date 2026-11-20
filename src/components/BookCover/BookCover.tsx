@@ -21,7 +21,7 @@ interface BookCoverProps {
  */
 const PLACEHOLDER_TONES = ['#3b4a5e', '#7a3a52', '#5a5552', '#6a5526', '#2f4a45', '#6e3f35', '#4a4060'];
 
-function toneFor(title: string): string {
+export function toneFor(title: string): string {
   let hash = 0;
   for (const ch of title) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
   return PLACEHOLDER_TONES[hash % PLACEHOLDER_TONES.length]!;
@@ -33,7 +33,7 @@ export function BookCover({ book, size = 'M', alt = '', priority = false, progre
   const showPlaceholder = state === 'failed';
 
   return (
-    <div className={[styles.cover, styles[`size${size}`], className].filter(Boolean).join(' ')}>
+    <div className={[styles.cover, styles[`size${size}`], className].filter(Boolean).join(' ')} data-cover-source="">
       {showPlaceholder ? (
         <div
           className={styles.placeholder}

@@ -45,6 +45,30 @@ describe('guest experience', () => {
     expect(await screen.findByRole('heading', { name: /reading progress/i })).toBeInTheDocument();
   });
 
+  it('shows a shelf as spines, remembers the choice, and opens a book from a spine', async () => {
+    const user = userEvent.setup();
+    localStorage.removeItem('bookshelf:shelf-view');
+    renderAt('/guest');
+    await screen.findByRole('heading', { level: 1, name: /a reader’s library/i });
+    window.history.pushState({}, '', '/shelves/shelf-read');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    expect(await screen.findByRole('heading', { level: 1, name: 'Read' })).toBeInTheDocument();
+
+    const view = screen.getByRole('group', { name: 'View' });
+    expect(within(view).getByRole('radio', { name: 'Covers' })).toBeChecked();
+    await user.click(within(view).getByRole('radio', { name: 'Spines' }));
+    expect(localStorage.getItem('bookshelf:shelf-view')).toBe('spines');
+
+    // Same list and the same well-named link per book, now drawn as spines.
+    const shelf = screen.getByRole('list', { name: 'Read' });
+    const spine = within(shelf).getAllByRole('link')[0]!;
+    expect(spine.className).toMatch(/spine/);
+    const title = spine.getAttribute('aria-label')!.split(',')[0]!;
+    await user.click(spine);
+    expect(await screen.findByRole('heading', { level: 1, name: title })).toBeInTheDocument();
+    localStorage.removeItem('bookshelf:shelf-view');
+  });
+
   it('searches your own library from the "/" shortcut, including notes', async () => {
     const user = userEvent.setup();
     renderAt('/guest');

@@ -75,7 +75,7 @@ function BookDetail({ entry }: { entry: LibraryEntry }) {
         </Link>
       </div>
 
-      <div className={styles.coverCol}>
+      <div className={styles.coverCol} data-cover-target="">
         <BookCover book={book} size="L" alt={`Cover of ${book.title}`} priority className={styles.cover} />
       </div>
 

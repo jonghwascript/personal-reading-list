@@ -37,3 +37,67 @@
   font-weight: var(--font-semibold);
   text-decoration: underline;
 }
+
+/* Covers / Spines: radios styled as a segmented control, labelled like the selects beside it. */
+.viewSwitch {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0 0 0 auto;
+  padding: 0;
+  border: 0;
+}
+
+.viewLegend {
+  padding: 0;
+  margin-bottom: var(--space-1);
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+}
+
+.viewOptions {
+  display: flex;
+  padding: 3px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-secondary);
+}
+
+.viewOption {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: calc(2.75rem - 8px);
+  padding: 0 var(--space-3);
+  border-radius: calc(var(--radius-md) - 2px);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+}
+
+.viewOption input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.viewOption:has(input:checked) {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.viewOption:has(input:focus-visible) {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* High contrast: the chosen view is marked by a border too, not only by its lighter fill. */
+:global(:root[data-contrast='more']) .viewOption:has(input:checked) {
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: -2px;
+}

@@ -1,9 +1,10 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type { LibraryEntry } from '../../types';
 import { BookCover } from '../BookCover/BookCover';
 import { useBookDraggable } from '../ShelfDnd/ShelfDnd';
 import { TiltCover } from '../TiltCover/TiltCover';
 import { formatAuthors } from '../../lib/format';
+import { openWithCoverTransition } from '../../lib/motion';
 import styles from './BookCard.module.css';
 
 interface BookCardProps {
@@ -18,6 +19,7 @@ interface BookCardProps {
  */
 export function BookCard({ entry, showProgress = false, priority }: BookCardProps) {
   const drag = useBookDraggable(entry.id);
+  const navigate = useNavigate();
   const { book } = entry;
   const percent = showProgress ? (entry.progress?.percent ?? 0) : null;
 
@@ -34,6 +36,8 @@ export function BookCard({ entry, showProgress = false, priority }: BookCardProp
       ref={drag.ref}
       {...drag.props}
       to={`/books/${entry.id}`}
+      // The cover lifts off the grid and becomes the detail page's cover.
+      onClick={(e) => openWithCoverTransition(e, () => navigate(`/books/${entry.id}`))}
       className={styles.card}
       data-dragging={drag.isDragging || undefined}
       data-landed={drag.landed || undefined}

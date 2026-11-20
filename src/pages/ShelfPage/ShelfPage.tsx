@@ -1,13 +1,15 @@
-import { Compass, Pencil, Trash2 } from 'lucide-react';
+import { Compass, LayoutGrid, Library, Pencil, Trash2 } from 'lucide-react';
 import { useMemo, useState, type FormEvent } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { BookGrid } from '../../components/BookGrid/BookGrid';
 import { EmptyState } from '../../components/EmptyState/EmptyState';
+import { SpineShelf } from '../../components/SpineShelf/SpineShelf';
 import { Button, ButtonLink } from '../../components/ui/Button';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { pluralize } from '../../lib/format';
 import { filterEntries, genresIn, sortEntries, type SortKey } from '../../lib/libraryRules';
 import { useFlipGrid } from '../../lib/motion';
+import { useShelfView, type ShelfView } from '../../lib/shelfView';
 import { usePageTitle } from '../../lib/usePageTitle';
 import { useAnnouncer } from '../../state/AnnouncerContext';
 import { useLibrary } from '../../state/LibraryContext';
@@ -40,6 +42,7 @@ export function ShelfPage() {
   const [genre, setGenre] = useState('');
   // Sorting and filtering glide books to their new places instead of snapping (animated-shelf differentiator).
   const flip = useFlipGrid();
+  const [view, setView] = useShelfView();
   const [renaming, setRenaming] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -141,10 +144,15 @@ export function ShelfPage() {
                 </select>
               </label>
             )}
+            <ViewSwitch value={view} onChange={setView} />
           </div>
           {visible.length > 0 ? (
             <div ref={flip.ref}>
-              <BookGrid entries={visible} label={shelf.name} priorityCount={8} showProgress={shelf.kind === 'reading'} />
+              {view === 'spines' ? (
+                <SpineShelf entries={visible} label={shelf.name} showProgress={shelf.kind === 'reading'} />
+              ) : (
+                <BookGrid entries={visible} label={shelf.name} priorityCount={8} showProgress={shelf.kind === 'reading'} />
+              )}
             </div>
           ) : (
             <p className={styles.noMatch} role="status">
@@ -178,5 +186,28 @@ export function ShelfPage() {
           : 'This shelf is empty, so nothing else will change.'}
       </ConfirmDialog>
     </div>
+  );
+}
+
+const VIEWS: { value: ShelfView; label: string; icon: React.ReactNode }[] = [
+  { value: 'covers', label: 'Covers', icon: <LayoutGrid size={16} aria-hidden="true" /> },
+  { value: 'spines', label: 'Spines', icon: <Library size={16} aria-hidden="true" /> },
+];
+
+/** Covers or spines: a native radio group, styled as a segmented control. */
+function ViewSwitch({ value, onChange }: { value: ShelfView; onChange(view: ShelfView): void }) {
+  return (
+    <fieldset className={styles.viewSwitch}>
+      <legend className={styles.viewLegend}>View</legend>
+      <div className={styles.viewOptions}>
+        {VIEWS.map((v) => (
+          <label key={v.value} className={styles.viewOption}>
+            <input type="radio" name="shelf-view" value={v.value} checked={value === v.value} onChange={() => onChange(v.value)} />
+            {v.icon}
+            {v.label}
+          </label>
+        ))}
+      </div>
+    </fieldset>
   );
 }

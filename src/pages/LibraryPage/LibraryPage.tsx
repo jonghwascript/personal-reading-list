@@ -1,6 +1,6 @@
 import { ArrowRight, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { BookCover } from '../../components/BookCover/BookCover';
 import { BookGrid } from '../../components/BookGrid/BookGrid';
 import { CuratedLists, StartSearch } from '../../components/Discovery/Discovery';
@@ -12,7 +12,7 @@ import { Button } from '../../components/ui/Button';
 import { formatAuthors, pluralize } from '../../lib/format';
 import { booksFinishedInYear } from '../../lib/goal';
 import { authorsIn, filterEntries, genresIn, sortEntries, type EntryFilter } from '../../lib/libraryRules';
-import { useFlipGrid } from '../../lib/motion';
+import { openWithCoverTransition, useFlipGrid } from '../../lib/motion';
 import { usePageTitle } from '../../lib/usePageTitle';
 import { useLibrary } from '../../state/LibraryContext';
 import { useSession } from '../../state/SessionContext';
@@ -241,11 +241,13 @@ function DropSection({ shelfId, shelfName, labelledBy, children }: { shelfId: st
 /** Pointer-only drag handle on reading cards (the card itself holds a form, so it can't be the handle). */
 function DraggableCover({ entry, priority }: { entry: LibraryEntry; priority: boolean }) {
   const drag = useBookDraggable(entry.id);
+  const navigate = useNavigate();
   return (
     <Link
       ref={drag.ref}
       {...drag.props}
       to={`/books/${entry.id}`}
+      onClick={(e) => openWithCoverTransition(e, () => navigate(`/books/${entry.id}`))}
       className={styles.readingCover}
       tabIndex={-1}
       aria-hidden="true"
