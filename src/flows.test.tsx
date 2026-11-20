@@ -45,10 +45,13 @@ it('takes a new reader from an empty shelf to their year in review', async () =>
   // 2. A multi-edition book asks which edition, with "Not sure yet" pre-selected.
   await user.click(within(shortNovels).getByRole('button', { name: /add small things like these/i }));
   expect(await screen.findByRole('heading', { name: /which edition of small things like these/i })).toBeInTheDocument();
+  // The edition choice opens as a modal dialog named by its question.
+  expect(screen.getByRole('dialog', { name: /which edition of small things like these/i })).toBeInTheDocument();
   await user.click(await screen.findByRole('radio', { name: /116 pages/i }, { timeout: 3000 }));
   await user.selectOptions(screen.getByRole('combobox', { name: 'Shelf' }), 'Currently Reading');
   await user.click(screen.getByRole('button', { name: 'Add to Currently Reading' }));
   expect(await screen.findByRole('link', { name: /in your library/i })).toHaveFocus();
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
   // 3. Dashboard: log the last page from the Currently Reading card.
   await user.click(screen.getAllByRole('link', { name: 'Library' })[0]!);

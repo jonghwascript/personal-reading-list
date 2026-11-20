@@ -134,33 +134,6 @@
   padding-top: var(--space-2);
 }
 
-/* Choosing an edition needs room: the card takes the whole row, chooser beside the cover. */
-.result:has(form) {
-  display: grid;
-  grid-column: 1 / -1;
-  grid-template-columns: var(--cover-width) minmax(0, 1fr);
-  grid-template-areas:
-    'cover body'
-    'cover actions';
-  align-items: start;
-  gap: var(--space-1) var(--space-5);
-}
-
-.result:has(form) .resultActions {
-  margin-top: var(--space-3);
-  padding-top: 0;
-}
-
-@media (max-width: 30em) {
-  .result:has(form) {
-    grid-template-columns: var(--cover-width);
-    grid-template-areas:
-      'cover'
-      'body'
-      'actions';
-  }
-}
-
 /* Phones too narrow for two 145px covers (< 352px): two slightly smaller columns. */
 @media (max-width: 22em) {
   .results {

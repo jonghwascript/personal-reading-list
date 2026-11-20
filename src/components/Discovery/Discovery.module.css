@@ -145,21 +145,6 @@
   padding-top: var(--space-2);
 }
 
-/* While choosing an edition, the tile takes the whole row with the chooser beside the cover. */
-.tile[data-expanded='true'] {
-  display: grid;
-  grid-column: 1 / -1;
-  grid-template-columns: var(--cover-width) minmax(0, 1fr);
-  align-items: start;
-  gap: var(--space-5);
-}
-
-@media (max-width: 30em) {
-  .tile[data-expanded='true'] {
-    grid-template-columns: var(--cover-width);
-  }
-}
-
 @media (max-width: 22em) {
   .tiles {
     grid-template-columns: repeat(2, minmax(0, 1fr));

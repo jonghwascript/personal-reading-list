@@ -160,10 +160,9 @@ function BookTiles({ items, label }: { items: { book: Book; editionCount: number
 }
 
 function Tile({ book, editionCount }: { book: Book; editionCount: number }) {
-  const [expanded, setExpanded] = useState(false);
   const meta = [book.pageCount && `${book.pageCount} pages`, book.publishedYear].filter(Boolean).join(' · ');
   return (
-    <li className={styles.tile} data-expanded={expanded}>
+    <li className={styles.tile}>
       <div className={styles.tileCover}>
         <TiltCover>
           <BookCover book={book} size="M" />
@@ -174,7 +173,7 @@ function Tile({ book, editionCount }: { book: Book; editionCount: number }) {
         <p className={styles.tileAuthor}>{formatAuthors(book.authors) || 'Unknown author'}</p>
         {meta && <p className={styles.tileMeta}>{meta}</p>}
         <div className={styles.tileAction}>
-          <AddBook book={book} editionCount={editionCount} onExpandedChange={setExpanded} />
+          <AddBook book={book} editionCount={editionCount} />
         </div>
       </div>
     </li>

@@ -23,27 +23,63 @@
   font-weight: var(--font-regular);
 }
 
-.chooser {
-  display: grid;
-  gap: var(--space-3);
-  width: 100%;
-  padding: var(--space-4);
+/* ------------------------------------------------------------------ Edition dialog */
+.dialog {
+  width: min(34rem, calc(100% - 2 * var(--space-4)));
+  /* A fixed height, not just a max: the edition list loads after the dialog opens, and a box that
+     grew (and re-centred) mid-animation was the main source of jank. The list scrolls inside. */
+  height: min(36rem, calc(100dvh - 2 * var(--space-4)));
+  padding: 0;
+  overflow: hidden;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background: var(--color-bg-secondary);
-  animation: open var(--duration-base) var(--ease-out);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  box-shadow: var(--shadow-lg);
 }
 
-@keyframes open {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
+.dialog[open] {
+  display: flex;
+}
+
+.dialog::backdrop {
+  /* --backdrop-opacity is tweened by useAnimatedDialog so the dim fades with the panel. No blur:
+     animating a full-screen backdrop-filter repaints every frame and makes the fade stutter. */
+  background: rgb(20 48 47 / calc(0.5 * var(--backdrop-opacity, 1)));
+}
+
+
+/* Header and footer stay put; only the edition list scrolls. */
+.chooser {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-5) var(--space-4);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.thumb {
+  flex-shrink: 0;
+  width: 3.5rem;
+}
+
+.headerText {
+  display: grid;
+  flex: 1;
+  gap: var(--space-1);
+  min-width: 0;
 }
 
 .chooserTitle {
-  font-size: var(--text-base);
-  line-height: var(--leading-relaxed);
+  font-size: var(--text-lg);
+  line-height: var(--leading-snug);
 }
 
 .chooserTitle:focus {
@@ -55,25 +91,47 @@
 }
 
 .chooserHint {
-  margin-top: calc(-1 * var(--space-2));
   color: var(--color-text-tertiary);
   font-size: var(--text-xs);
   line-height: var(--leading-loose);
 }
 
+.close {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-2)) 0 0;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-tertiary);
+}
+
+.close:hover {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+}
+
 .options {
   display: grid;
+  flex: 1;
+  align-content: start;
   gap: var(--space-1);
+  min-height: 0;
   margin: 0;
-  padding: 0;
+  padding: var(--space-3) var(--space-4);
+  overflow-y: auto;
   border: 0;
+  overscroll-behavior: contain;
 }
 
 .option {
   display: flex;
   align-items: flex-start;
   gap: var(--space-3);
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-3);
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   cursor: pointer;
@@ -81,12 +139,17 @@
 }
 
 .option:hover {
-  background: var(--color-surface);
+  background: var(--color-bg-secondary);
 }
 
 .option:has(input:checked) {
   border-color: var(--color-accent);
-  background: var(--color-surface);
+  background: var(--color-accent-subtle);
+}
+
+.option:has(input:focus-visible) {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
 }
 
 .option input {
@@ -110,6 +173,45 @@
   line-height: var(--leading-loose);
 }
 
+/* Placeholder rows while editions load, shaped like the options they become. */
+.skeletonOption {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+}
+
+.skeletonDot,
+.skeletonLine {
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, var(--color-bg-tertiary) 0%, var(--color-bg-secondary) 50%, var(--color-bg-tertiary) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+.skeletonDot {
+  flex-shrink: 0;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: var(--radius-full);
+}
+
+.skeletonText {
+  display: grid;
+  flex: 1;
+  gap: var(--space-2);
+}
+
+.skeletonLine {
+  height: 0.75rem;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
 .status {
   padding: var(--space-2) var(--space-3);
   color: var(--color-text-tertiary);
@@ -120,12 +222,22 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--color-border-subtle);
+  background: var(--color-bg-secondary);
+}
+
+.footerActions {
+  display: flex;
   gap: var(--space-2);
+  margin-left: auto;
 }
 
 .select {
   min-height: 2.25rem;
-  max-width: 12rem;
+  max-width: 14rem;
   padding: 0 var(--space-2);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
