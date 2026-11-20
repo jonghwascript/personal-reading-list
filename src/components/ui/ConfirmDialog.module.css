@@ -8,13 +8,11 @@
   box-shadow: var(--shadow-lg);
 }
 
-.dialog[open] {
-  animation: pop var(--duration-base) var(--ease-out);
-}
 
 .dialog::backdrop {
-  background: rgb(20 48 47 / 0.45);
-  backdrop-filter: blur(2px);
+  /* --backdrop-opacity is tweened by useAnimatedDialog so the dim fades with the panel. No blur:
+     animating a full-screen backdrop-filter repaints every frame and makes the fade stutter. */
+  background: rgb(20 48 47 / calc(0.5 * var(--backdrop-opacity, 1)));
 }
 
 .panel {
@@ -40,9 +38,3 @@
   margin-top: var(--space-3);
 }
 
-@keyframes pop {
-  from {
-    opacity: 0;
-    transform: translateY(0.5rem) scale(0.98);
-  }
-}

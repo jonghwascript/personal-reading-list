@@ -1,4 +1,5 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import { useAnimatedDialog } from '../../lib/motion';
 import { Button } from './Button';
 import styles from './ConfirmDialog.module.css';
 
@@ -17,14 +18,8 @@ interface ConfirmDialogProps {
  * trigger all come from the platform. Reserved for destructive actions (patterns.md).
  */
 export function ConfirmDialog({ open, title, children, confirmLabel, tone = 'primary', onConfirm, onCancel }: ConfirmDialogProps) {
-  const ref = useRef<HTMLDialogElement>(null);
-
-  useEffect(() => {
-    const dialog = ref.current;
-    if (!dialog) return;
-    if (open && !dialog.open) dialog.showModal();
-    if (!open && dialog.open) dialog.close();
-  }, [open]);
+  // Springs in, sinks out (GSAP); instant under reduced motion.
+  const ref = useAnimatedDialog(open);
 
   return (
     <dialog

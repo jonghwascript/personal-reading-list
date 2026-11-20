@@ -9,6 +9,7 @@ import { EmptyState } from '../../components/EmptyState/EmptyState';
 import { Button } from '../../components/ui/Button';
 import { formatAuthors, pluralize } from '../../lib/format';
 import { BookApiError, searchBooks, type BookApiErrorKind, type SearchField } from '../../lib/openLibrary';
+import { useEnterOnChange, useEnterStagger } from '../../lib/motion';
 import { usePageTitle } from '../../lib/usePageTitle';
 import { useAnnouncer } from '../../state/AnnouncerContext';
 import type { Book } from '../../types';
@@ -66,6 +67,23 @@ export function DiscoverPage() {
   const { announce } = useAnnouncer();
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsHeadingRef = useRef<HTMLHeadingElement>(null);
+
+  // Search motion: brief and functional. New results stagger in (only the new ones after
+  // "Load more"); the results area cross-fades in after the skeleton; empty/error states rise in.
+  const runKey = `${query}|${field}|${retryToken}`;
+  const resultsListRef = useRef<HTMLUListElement>(null);
+  const resultsSectionRef = useRef<HTMLElement>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
+  const shownBooks = state.status === 'done' || state.status === 'error' ? state.books : [];
+  const hasSection = state.status === 'done' || (state.status === 'error' && state.books.length > 0);
+  const isEmpty = state.status === 'done' && state.books.length === 0;
+  useEnterStagger(
+    resultsListRef,
+    shownBooks.map((b) => b.id),
+    runKey,
+  );
+  useEnterOnChange(resultsSectionRef, hasSection ? `${runKey}:${isEmpty ? 'empty' : 'results'}` : '', isEmpty ? { y: 10, duration: 0.3 } : { duration: 0.2 });
+  useEnterOnChange(errorRef, state.status === 'error' && state.books.length === 0 ? `${runKey}:${state.kind}` : '', { y: 10, duration: 0.3 });
 
   useEffect(() => setDraft(query), [query]);
   useEffect(() => setDraftField(field), [field]);
@@ -180,11 +198,13 @@ export function DiscoverPage() {
       {state.status === 'loading' && <ResultsSkeleton />}
 
       {state.status === 'error' && state.books.length === 0 && (
-        <ErrorPanel kind={state.kind} onRetry={() => setRetryToken((n) => n + 1)} />
+        <div ref={errorRef}>
+          <ErrorPanel kind={state.kind} onRetry={() => setRetryToken((n) => n + 1)} />
+        </div>
       )}
 
       {(state.status === 'done' || (state.status === 'error' && state.books.length > 0)) && (
-        <section className={page.section} aria-labelledby="results-heading">
+        <section ref={resultsSectionRef} className={page.section} aria-labelledby="results-heading">
           {state.books.length === 0 ? (
             <EmptyState icon={<SearchX />} title={`No books found for “${query}”`}>
               {field === 'title'
@@ -199,7 +219,7 @@ export function DiscoverPage() {
                 {state.status === 'done' ? `${pluralize(state.total, 'result')}` : 'Results'}
                 <span className={styles.resultsQuery}> for “{query}”</span>
               </h2>
-              <ul role="list" className={styles.results}>
+              <ul ref={resultsListRef} role="list" className={styles.results}>
                 {state.books.map((book, i) => (
                   <SearchResultItem key={book.id} book={book} editionCount={state.editionCounts?.[book.id] ?? 1} priority={i < 4} />
                 ))}
@@ -232,7 +252,7 @@ function SearchResultItem({ book, editionCount, priority }: { book: Book; editio
   ].filter(Boolean);
 
   return (
-    <li className={styles.result}>
+    <li className={styles.result} data-enter-id={book.id}>
       <div className={styles.resultCover}>
         <TiltCover>
           <BookCover book={book} size="M" priority={priority} />
