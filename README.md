@@ -266,8 +266,9 @@ The Book Club 2026 shelf was measured separately in the local production build b
 
 ### Areas for Improvement
 
-- Stretch features not yet built: Goodreads CSV import, activity timeline, bulk actions.
+- Optional features still to build include Goodreads CSV import, a filterable reading activity timeline, and bulk actions for moving, deleting, or tagging books.
 - Test the deployed app on real devices, including the guest library and signed-in flows.
+- Measure loading with an account that has at least 100 books, and measure book search end to end, including Open Library response time.
 - Main bundle size: the landing page and library still share one main chunk (splitting the library out caused a layout shift on direct visits), though GSAP is no longer in it.
 
 ---
@@ -275,8 +276,9 @@ The Book Club 2026 shelf was measured separately in the local production build b
 ## Known Limitations
 
 - **Shared catalog writes:** any signed-in user can insert or update rows in the shared `books` catalog (by design, for de-duplication); a server function would be safer.
-- **Whole-library load:** an account's library is loaded in one go — fine for hundreds of books, but it doesn't page.
-- **Auth email:** Supabase's built-in email service only delivers to project team members and is rate-limited; production needs custom SMTP.
+- **Shelf queries.** Opening a shelf loads the full account library and filters it in the browser. Shelf-scoped queries and pagination are still to be implemented.
+- **Account preferences.** Theme, reading preferences, and shelf view are stored in the browser. Account-level storage and cross-device sync for these settings are still to be implemented.
+- **Password reset.** The reset form and email request are implemented. A password reset link error was reported on the deployed site, and the cause is still under investigation. Signup confirmation and password reset with a general visitor's email address still need end-to-end verification. This project uses Supabase's built-in email service, which has recipient and rate limits.
 - **Currently Reading cards** use a smaller cover (88px) than the 145px grids.
 - **Year review sharing** produces an image only, not a public link.
 - **Screen readers:** not yet tested with NVDA, JAWS, VoiceOver or TalkBack.
