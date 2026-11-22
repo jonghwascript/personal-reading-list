@@ -1,5 +1,5 @@
 /// <reference types="vitest/config" />
-import { copyFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
@@ -26,7 +26,12 @@ function githubPagesFallback(): Plugin {
     // After everything is written: index.html is produced by Vite's own HTML plugin late in the
     // build, so copy the finished file rather than reading it from the bundle.
     closeBundle() {
-      copyFileSync(join(outDir, 'index.html'), join(outDir, '404.html'));
+      const index = join(outDir, 'index.html');
+      copyFileSync(index, join(outDir, '404.html'));
+      // The public guest entry needs its own document so Pages serves it with HTTP 200.
+      const guestDir = join(outDir, 'guest');
+      mkdirSync(guestDir, { recursive: true });
+      copyFileSync(index, join(guestDir, 'index.html'));
       writeFileSync(join(outDir, '.nojekyll'), '');
     },
   };

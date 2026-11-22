@@ -4,7 +4,7 @@ A personal reading tracker where you search for books, organize them into shelve
 
 | | |
 |---|---|
-| **Live site** | https://jonghwascript.github.io/personal-reading-list/ — guest library: https://jonghwascript.github.io/personal-reading-list/guest |
+| **Live site** | https://jonghwascript.github.io/personal-reading-list/ — guest library: https://jonghwascript.github.io/personal-reading-list/guest/ |
 | **Repository** | https://github.com/jonghwascript/personal-reading-list |
 | **Challenge** | [Personal reading list (Bookshelf) — Frontend Mentor Product Challenge](https://www.frontendmentor.io/challenges/personal-reading-list) |
 | **Author** | [github.com/jonghwascript](https://github.com/jonghwascript) |
