@@ -9,7 +9,7 @@ A personal reading tracker where you search for books, organize them into shelve
 | **Challenge** | [Personal reading list (Bookshelf) — Frontend Mentor Product Challenge](https://www.frontendmentor.io/challenges/personal-reading-list) |
 | **Author** | [github.com/jonghwascript](https://github.com/jonghwascript) |
 
-![Bookshelf landing page: "Your reading life, beautifully organized." beside a collage of book covers](./screenshot.jpg)
+![Bookshelf landing page with “Your reading life, shelved.”, a “Try as guest” button, and two rows of book spines](./screenshot.jpg)
 
 ---
 
@@ -223,14 +223,14 @@ Rate your implementation honestly. This self-awareness is part of the portfolio 
 
 ### Lighthouse Scores
 
-Measured with Lighthouse on the deployed site (https://jonghwascript.github.io/personal-reading-list/). Mobile mode simulates a slower network and CPU, so its scores run lower.
+Measured on the [deployed landing page](https://jonghwascript.github.io/personal-reading-list/) on November 22, 2026, with Lighthouse 13.6.0. The table shows the median of three runs per device preset. Mobile performance ranged from 99 to 100.
 
 | Category | Desktop | Mobile |
 |----------|---------|--------|
-| Performance | 93 | 86 |
+| Performance | 100 | 100 |
 | Accessibility | 100 | 100 |
-| Best Practices | 96 | 92 |
-| SEO | 100 | 91 |
+| Best Practices | 100 | 100 |
+| SEO | 100 | 100 |
 
 ### Strengths
 
@@ -241,7 +241,7 @@ Measured with Lighthouse on the deployed site (https://jonghwascript.github.io/p
 ### Areas for Improvement
 
 - Stretch features not yet built: Goodreads CSV import, activity timeline, bulk actions.
-- Real-device testing on the deployed site. Lighthouse clears every target on desktop (93 / 100 / 96 / 100) and mobile (86 / 100 / 92 / 91), but mobile performance has the least headroom over the 85 target.
+- Test the deployed app on real devices, including the guest library and signed-in flows.
 - Main bundle size: the landing page and library still share one main chunk (splitting the library out caused a layout shift on direct visits), though GSAP is no longer in it.
 
 ---
