@@ -19,9 +19,9 @@ Bookshelf is a full-stack React app. Visitors can open a fully stocked **guest l
 
 What you can do:
 
-- **Find books** on Open Library by title, author or ISBN, with edition-aware duplicate detection ("In your library") and an edition picker when a work has several editions.
+- **Find books** on Open Library by title, author or ISBN. Add the catalog copy in one click, choose another shelf or edition, or open your existing copy when a match is found.
 - **Organize** books on three default shelves plus your own; drag books between shelves (mouse, touch or keyboard), reorder shelves, sort and filter with animated re-layout.
-- **Track progress** in pages, percent (e-books) or listening time (audiobooks), straight from the dashboard, with undo and an explicit "Mark as finished".
+- **Track progress** in pages, percent (e-books and print books with an unknown page count), or listening time (audiobooks), straight from the dashboard, with undo and an explicit "Mark as finished".
 - **Set a yearly goal** and see whether you're ahead, on track or behind.
 - **Look back** on any year with the year in review, and share it as an image.
 
@@ -42,7 +42,7 @@ What you can do:
 
 ## Design Decisions
 
-These are the product and design choices I made where the spec left room for interpretation.
+This section records the initial design and the trade-offs behind it. The later [requirements review and product decisions](#requirements-review-and-product-decisions) describe how those flows evolved.
 
 I designed the three features in the order a reader meets them: **discovery** fills the library, **progress tracking** gives a reason to come back while reading, and the **year in review** makes the accumulated record worth revisiting. Deciding *what progress data to store* first also decided what story the review could honestly tell.
 
@@ -104,6 +104,28 @@ Search results and curated books are 145×214 cards on the same grid as the libr
 **Navigation.** A sidebar on desktop (shelves with counts double as drag-and-drop targets) and a bottom bar on mobile; focus moves to each page's heading on navigation, behind a skip link.
 
 ---
+
+## Requirements Review and Product Decisions
+
+After the first full-stack implementation, I reviewed five documents covering the product definition, core requirements, design challenges, differentiators, and technical requirements. I mapped the acceptance criteria to the existing app and identified where the spec left a design choice open. For example, logging a percentage for a book with no known page count was required. Opening that input directly from a dashboard card was a design decision. The review also identified gaps in shelf selection during search, partial save failures, and checks that needed a deployed environment. [Requirements analysis](docs/product/requirements-analysis.md)
+
+I used *The Right It* to turn reading experiences into testable hypotheses. My account of finishing a book summary and never reopening it, and of sharing fewer handwritten quotes over time, helped me narrow the scope. I chose to stop exploring in-app quote sharing. I then specified what behavior would count as evidence before running either of the following experiments. [Problem discovery](docs/product/problem.md) · [Hypotheses](docs/product/hypotheses.md) · [Experiments](docs/product/experiments.md)
+
+| Experiment | Evidence agreed in advance |
+|---|---|
+| Estimated finish date for a technical book when reading falls behind | Across three opportunities where the estimate misses the deadline, see whether I set aside time and actually read more on at least one occasion. |
+| Page-number recording for print books with an unknown total | Give five book-club members a percentage field and an optional notes field for three sessions. Prioritize reviewing page-number recording if at least two participants try to leave an exact page number in at least two sessions without entering the total. |
+
+Both experiments are planned. The participant observations and usability outcomes are still open. [Open questions](docs/product/open-questions.md)
+
+I reviewed the flows with AI agents taking product design, PM/PO, front-end, and QA perspectives. They surfaced trade-offs and edge cases, including where the full completed-books list should open, what to show when this year's review is empty but the library has books, and what to do when progress saves but the shelf move fails. I approved the resulting choices and recorded their rationale before comparing them with the implementation. [Decision log](docs/product/decisions.md)
+
+| Flow | Approved direction |
+|---|---|
+| Guest experience | Open a sample book from Currently Reading, then reach the year in review through the app's navigation. The main signup prompt follows the review. |
+| First book | Start with **Add your first book** in the empty library. Add the catalog copy to Want to Read in one click, with separate controls for other shelves and editions. After the first successful save, open the destination shelf. |
+| Progress and completion | Open and focus the selected book's input. Keep the draft on failure so it can be retried. Save 100% before offering the move to Read. Preserve the date of the final progress save and count the book once the move succeeds. |
+| Year in review | Start with the current year and offer past years with completed books. Lead with recently completed covers, followed by the monthly chart. Show up to six covers and open a separate list for the rest. |
 
 ## Development Journey
 
@@ -231,6 +253,10 @@ Measured on the [deployed landing page](https://jonghwascript.github.io/personal
 | Accessibility | 100 | 100 |
 | Best Practices | 100 | 100 |
 | SEO | 100 | 100 |
+
+The [public guest entry](https://jonghwascript.github.io/personal-reading-list/guest/) returned HTTP 200 and opened the sample library dashboard in a fresh browser session. In three mobile Lighthouse runs on November 22, 2026, Performance, Accessibility, Best Practices, and SEO each scored 100 every time. Median Largest Contentful Paint (LCP) was 0.8 s.
+
+The Book Club 2026 shelf was measured separately in the local production build because GitHub Pages returns HTTP 404 on direct requests to that shelf URL. Across three mobile runs per build, removing the fade on priority covers raised median Performance from 81 to 89 and reduced median LCP from 5.1 s to 3.8 s.
 
 ### Strengths
 
