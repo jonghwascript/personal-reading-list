@@ -22,8 +22,9 @@ import { createContext, useCallback, useContext, useMemo, useRef, useState, type
 import { orderKeyboardTargets, resolveDrop, stepTarget, type BookDragData, type ShelfDropData, type TargetRect } from '../../lib/shelfDnd';
 import { useAnnouncer } from '../../state/AnnouncerContext';
 import { useLibrary } from '../../state/LibraryContext';
-import type { LibraryEntry } from '../../types';
+import type { LibraryEntry, Shelf } from '../../types';
 import { BookCover } from '../BookCover/BookCover';
+import { FinishDateDialog } from '../ui/FinishDateDialog';
 import styles from './ShelfDnd.module.css';
 
 interface ShelfDndState {
@@ -54,6 +55,7 @@ export function ShelfDndProvider({ children }: { children: ReactNode }) {
   const { notify } = useAnnouncer();
   const [activeEntry, setActiveEntry] = useState<LibraryEntry | null>(null);
   const [landedId, setLandedId] = useState<string | null>(null);
+  const [finishMove, setFinishMove] = useState<{ entry: LibraryEntry; target: Shelf } | null>(null);
   const lastDropAt = useRef(0);
   const latest = useRef({ entries, shelves });
   latest.current = { entries, shelves };
@@ -105,24 +107,29 @@ export function ShelfDndProvider({ children }: { children: ReactNode }) {
     setActiveEntry(entries.find((e) => e.id === id) ?? null);
   };
 
-  const onDragEnd = async ({ active, over }: DragEndEvent) => {
-    lastDropAt.current = Date.now();
-    setActiveEntry(null);
-    const move = resolveDrop(entries, shelves, active.data.current as BookDragData | undefined, over?.data.current as ShelfDropData | undefined);
-    if (!move) return;
-    const previous = move.entry;
-    try {
-      await moveEntries([previous.id], move.target.id);
-    } catch {
-      return; // LibraryContext rolled back and explained.
-    }
+  const moveBook = async (previous: LibraryEntry, target: Shelf, date?: Date) => {
+    await moveEntries([previous.id], target.id, date);
     setLandedId(previous.id);
     window.setTimeout(() => setLandedId((id) => (id === previous.id ? null : id)), 900);
-    notify(`Moved “${previous.book.title}” to ${move.target.name}.`, 'success', {
+    notify(`Moved “${previous.book.title}” to ${target.name}.`, 'success', {
       label: 'Undo',
       onClick: () => {
         void restoreEntries([previous]).then(() => notify(`“${previous.book.title}” is back on ${shelfById(previous.shelfId)?.name ?? 'its shelf'}.`, 'info'));
       },
+    });
+  };
+
+  const onDragEnd = ({ active, over }: DragEndEvent) => {
+    lastDropAt.current = Date.now();
+    setActiveEntry(null);
+    const move = resolveDrop(entries, shelves, active.data.current as BookDragData | undefined, over?.data.current as ShelfDropData | undefined);
+    if (!move) return;
+    if (move.target.kind === 'read' && !move.entry.finishedAt && move.entry.progress?.percent !== 100) {
+      setFinishMove(move);
+      return;
+    }
+    void moveBook(move.entry, move.target).catch(() => {
+      if (move.target.kind === 'read') notify('Couldn’t move this book. Please try again.', 'error');
     });
   };
 
@@ -150,6 +157,10 @@ export function ShelfDndProvider({ children }: { children: ReactNode }) {
       }}
     >
       <ShelfDndContext.Provider value={state}>{children}</ShelfDndContext.Provider>
+      {finishMove && <FinishDateDialog onCancel={() => setFinishMove(null)} onMove={async (date) => {
+        await moveBook(finishMove.entry, finishMove.target, date);
+        setFinishMove(null);
+      }} />}
       <DragOverlay dropAnimation={prefersReducedMotion() ? null : { duration: 220, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' }}>
         {activeEntry ? <DragPreview entry={activeEntry} /> : null}
       </DragOverlay>

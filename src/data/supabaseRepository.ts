@@ -184,6 +184,10 @@ export class SupabaseRepository implements LibraryRepository {
     check(await this.db.from('library_entries').upsert(entries.map((e) => entryToRow(e, this.userId))));
   }
 
+  async saveAnnotations(id: string, fields: Partial<Pick<LibraryEntry, 'notes' | 'rating'>>): Promise<void> {
+    check(await this.db.from('library_entries').update(fields).eq('id', id).eq('user_id', this.userId).select('id').single());
+  }
+
   async removeEntries(ids: string[]): Promise<void> {
     if (ids.length === 0) return;
     check(await this.db.from('library_entries').delete().in('id', ids));
@@ -207,6 +211,16 @@ export class SupabaseRepository implements LibraryRepository {
     check(await this.db.from('reading_logs').delete().eq('id', id));
   }
 
+  async saveProgress(entry: LibraryEntry, log: ProgressLog, expectedAt: string | null, undo = false): Promise<boolean> {
+    return check(await this.db.rpc('save_reading_progress', {
+      entry_id: entry.id,
+      expected_at: expectedAt,
+      next_entry: entryToRow(entry, this.userId),
+      log_change: log,
+      undo,
+    })) === true;
+  }
+
   async saveShelves(shelves: Shelf[]): Promise<void> {
     if (shelves.length === 0) return;
     check(
@@ -218,6 +232,10 @@ export class SupabaseRepository implements LibraryRepository {
 
   async deleteShelf(id: string): Promise<void> {
     check(await this.db.from('shelves').delete().eq('id', id));
+  }
+
+  async moveBooksAndDeleteShelf(id: string, targetId: string, now = new Date()): Promise<void> {
+    check(await this.db.rpc('move_books_and_delete_shelf', { source_id: id, target_id: targetId, moved_at: now.toISOString() }));
   }
 
   async saveGoal(goal: ReadingGoal): Promise<void> {

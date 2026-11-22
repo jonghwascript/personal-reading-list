@@ -1,6 +1,6 @@
-import { Check, Plus, X } from 'lucide-react';
+import { Check, ChevronDown, Plus, X } from 'lucide-react';
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { DuplicateBookError } from '../../data/repository';
 import { findDuplicate } from '../../lib/libraryRules';
 import { useAnimatedDialog } from '../../lib/motion';
@@ -17,18 +17,17 @@ interface AddBookProps {
   editionCount: number;
 }
 
-/**
- * Design challenge #2's friction rule: one click when there's only one edition; one extra,
- * pre-answered step when there are several — because the edition decides the page count that
- * progress percentages are computed from. That extra step opens in a dialog: an inline chooser
- * couldn't fit a 145px card without breaking the grid. Single-edition books never see it, so the
- * routine add stays modal-free (patterns.md).
- */
 export function AddBook({ book, editionCount }: AddBookProps) {
-  const { entries, addBook, defaultShelf, shelfById } = useLibrary();
+  const { entries, shelves, addBook, defaultShelf, shelfById } = useLibrary();
+  const navigate = useNavigate();
   const { notify } = useAnnouncer();
   const [choosing, setChoosing] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [shelfId, setShelfId] = useState('');
+  const [shelvesOpen, setShelvesOpen] = useState(false);
+  const shelfButtonRef = useRef<HTMLButtonElement>(null);
+  const shelvesId = useId();
   const inLibraryRef = useRef<HTMLAnchorElement>(null);
   const justAdded = useRef(false);
   const existing = findDuplicate(entries, book);
@@ -43,17 +42,21 @@ export function AddBook({ book, editionCount }: AddBookProps) {
   }, [existing, choosing]);
 
   /** Resolves true when the book was added, so the dialog knows to close. */
-  const add = async (chosen: Book, shelfId: string): Promise<boolean> => {
+  const add = async (chosen: Book, shelfId: string, editionPages?: number | null): Promise<boolean> => {
     setBusy(true);
+    setFailed(false);
+    setShelfId(shelfId);
     // Set before the call: the optimistic update renders "In your library" before addBook resolves.
     justAdded.current = true;
     try {
-      const entry = await addBook(chosen, shelfId);
+      const entry = await addBook(chosen, shelfId, editionPages);
+      if (entries.length === 0) navigate(`/shelves/${entry.shelfId}`);
       notify(`Added “${chosen.title}” to ${shelfById(entry.shelfId)?.name ?? 'your library'}.`, 'success');
       return true;
     } catch (err) {
       justAdded.current = false;
       if (err instanceof DuplicateBookError) notify(err.message, 'info');
+      setFailed(true);
       return false;
     } finally {
       setBusy(false);
@@ -74,20 +77,31 @@ export function AddBook({ book, editionCount }: AddBookProps) {
           <span className="u-sr-only">: open {book.title}</span>
         </Link>
       ) : (
-        <Button
-          variant="primary"
-          size="sm"
-          icon={<Plus />}
-          disabled={busy}
-          aria-haspopup={needsEdition ? 'dialog' : undefined}
-          onClick={() => (needsEdition ? setChoosing(true) : void add(book, want.id))}
-        >
-          {want.name}
-          <span className="u-sr-only">: add {book.title}</span>
-        </Button>
+        <div onKeyDown={(event) => {
+          if (event.key !== 'Escape' || !shelvesOpen) return;
+          event.stopPropagation();
+          setShelvesOpen(false);
+          shelfButtonRef.current?.focus();
+        }}>
+          <div className={styles.split}>
+            <Button variant="primary" size="sm" icon={<Plus />} disabled={busy} aria-label={`Add ${book.title} to ${want.name}`} onClick={() => void add(book, want.id)}>Add</Button>
+            <Button ref={shelfButtonRef} variant="primary" size="sm" icon={<ChevronDown />} disabled={busy} aria-label={`Choose another shelf for ${book.title}`} aria-expanded={shelvesOpen} aria-controls={shelvesId} onClick={() => setShelvesOpen(!shelvesOpen)} />
+          </div>
+          <ul id={shelvesId} hidden={!shelvesOpen} className={styles.shelfOptions}>
+            {shelves.filter((shelf) => shelf.id !== want.id).map((shelf) => (
+              <li key={shelf.id}><Button variant="ghost" size="sm" disabled={busy} onClick={() => {
+                setShelvesOpen(false);
+                shelfButtonRef.current?.focus();
+                void add(book, shelf.id);
+              }}>{shelf.name}</Button></li>
+            ))}
+          </ul>
+          {needsEdition && <Button variant="ghost" size="sm" aria-label={`Other editions of ${book.title}`} aria-haspopup="dialog" onClick={() => setChoosing(true)}>Other editions</Button>}
+          {failed && !choosing && <p role="alert">Couldn’t add this book. <button type="button" disabled={busy} onClick={() => void add(book, shelfId || want.id)}>Try again</button></p>}
+        </div>
       )}
       {/* Rendered outside the branch above so it can finish its exit animation after the add. */}
-      {choosing && <EditionDialog book={book} busy={busy} onClosed={() => setChoosing(false)} onAdd={add} />}
+      {choosing && <EditionDialog book={book} busy={busy} failed={failed} onClosed={() => setChoosing(false)} onAdd={add} />}
     </>
   );
 }
@@ -99,12 +113,14 @@ export function AddBook({ book, editionCount }: AddBookProps) {
 function EditionDialog({
   book,
   busy,
+  failed,
   onAdd,
   onClosed,
 }: {
   book: Book;
   busy: boolean;
-  onAdd(book: Book, shelfId: string): Promise<boolean>;
+  failed: boolean;
+  onAdd(book: Book, shelfId: string, editionPages?: number | null): Promise<boolean>;
   /** Called after the exit animation, when the dialog has really closed. */
   onClosed(): void;
 }) {
@@ -130,10 +146,11 @@ function EditionDialog({
       <EditionChooser
         book={book}
         busy={busy}
+        failed={failed}
         titleId={titleId}
         onCancel={requestClose}
-        onAdd={async (chosen, shelfId) => {
-          if (await onAdd(chosen, shelfId)) requestClose();
+        onAdd={async (chosen, shelfId, editionPages) => {
+          if (await onAdd(chosen, shelfId, editionPages)) requestClose();
         }}
       />
     </dialog>
@@ -145,14 +162,16 @@ type EditionsState = { status: 'loading' } | { status: 'ready'; editions: Editio
 function EditionChooser({
   book,
   busy,
+  failed,
   titleId,
   onAdd,
   onCancel,
 }: {
   book: Book;
   busy: boolean;
+  failed: boolean;
   titleId: string;
-  onAdd(book: Book, shelfId: string): Promise<void>;
+  onAdd(book: Book, shelfId: string, editionPages?: number | null): Promise<void>;
   onCancel(): void;
 }) {
   const { shelves, defaultShelf } = useLibrary();
@@ -178,7 +197,7 @@ function EditionChooser({
   const submit = (e: FormEvent) => {
     e.preventDefault();
     const edition = editions.find((ed) => ed.key === choice);
-    void onAdd(edition ? bookFromEdition(book, edition) : book, shelfId);
+    void onAdd(edition ? bookFromEdition(book, edition) : book, shelfId, edition?.pageCount);
   };
 
   const shelfName = shelves.find((s) => s.id === shelfId)?.name ?? 'shelf';
@@ -200,6 +219,7 @@ function EditionChooser({
           <span className="u-sr-only">Close</span>
         </button>
       </header>
+      {failed && <p role="alert">Couldn’t add this edition. Please try again.</p>}
 
       <fieldset className={styles.options} aria-busy={state.status === 'loading'}>
         <legend className="u-sr-only">Edition</legend>

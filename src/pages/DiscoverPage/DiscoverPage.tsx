@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { useSearchParams } from 'react-router-dom';
 import { AddBook } from '../../components/AddBook/AddBook';
 import { BookCover } from '../../components/BookCover/BookCover';
-import { CuratedLists, Recommendations } from '../../components/Discovery/Discovery';
+import { CuratedLists } from '../../components/Discovery/Discovery';
 import { TiltCover } from '../../components/TiltCover/TiltCover';
 import { EmptyState } from '../../components/EmptyState/EmptyState';
 import { Button } from '../../components/ui/Button';
@@ -166,7 +166,7 @@ export function DiscoverPage() {
               className={styles.input}
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              placeholder="Title, author, or ISBN"
+              placeholder="e.g. Circe, Madeline Miller, 9780316556347"
               autoComplete="off"
               enterKeyHint="search"
               autoFocus={!query}
@@ -190,7 +190,6 @@ export function DiscoverPage() {
 
       {state.status === 'idle' && (
         <div className={styles.idle}>
-          <Recommendations />
           <CuratedLists />
         </div>
       )}

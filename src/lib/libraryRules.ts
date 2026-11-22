@@ -25,14 +25,20 @@ export function applyMove(entry: LibraryEntry, target: Shelf, now: Date = new Da
       return {
         ...next,
         startedAt: entry.startedAt ?? iso,
-        finishedAt: entry.finishedAt ?? iso,
-        progress: endPosition(entry, iso),
+        finishedAt: entry.finishedAt ?? (entry.progress?.percent === 100 ? entry.progress.updatedAt : iso),
+        progress: entry.progress?.percent === 100 ? entry.progress : endPosition(entry, iso),
       };
     case 'want':
       return { ...next, startedAt: null, finishedAt: null, progress: null };
     default:
       return next;
   }
+}
+
+export function rehomeEntry(entry: LibraryEntry, target: Shelf, now: Date): LibraryEntry {
+  return target.kind === 'read' || target.kind === 'reading'
+    ? applyMove(entry, target, now)
+    : { ...entry, shelfId: target.id };
 }
 
 function startPosition(entry: LibraryEntry, updatedAt: string): ReadingProgress {
@@ -99,10 +105,12 @@ export interface EntryFilter {
   minRating?: number | null;
 }
 
+export const UNKNOWN_GENRE = '__unknown_genre__';
+
 export function filterEntries(entries: LibraryEntry[], filter: EntryFilter): LibraryEntry[] {
   return entries.filter(
     (e) =>
-      (!filter.genre || e.book.genres.includes(filter.genre)) &&
+      (!filter.genre || (filter.genre === UNKNOWN_GENRE ? e.book.genres.length === 0 : e.book.genres.includes(filter.genre))) &&
       (!filter.author || e.book.authors.includes(filter.author)) &&
       (!filter.minRating || (e.rating ?? 0) >= filter.minRating),
   );

@@ -1,4 +1,5 @@
 import type { LibraryEntry, ProgressLog, ReadingGoal, Shelf } from '../types';
+import { rehomeEntry } from '../lib/libraryRules';
 import { buildGuestSnapshot } from './guestSeed';
 import type { LibraryRepository, LibrarySnapshot } from './repository';
 
@@ -34,6 +35,11 @@ export class GuestRepository implements LibraryRepository {
     this.write();
   }
 
+  async saveAnnotations(id: string, fields: Partial<Pick<LibraryEntry, 'notes' | 'rating'>>): Promise<void> {
+    this.state.entries = this.state.entries.map((entry) => entry.id === id ? { ...entry, ...fields } : entry);
+    this.write();
+  }
+
   async removeEntries(ids: string[]): Promise<void> {
     const set = new Set(ids);
     this.state.entries = this.state.entries.filter((e) => !set.has(e.id));
@@ -51,6 +57,15 @@ export class GuestRepository implements LibraryRepository {
     this.write();
   }
 
+  async saveProgress(entry: LibraryEntry, log: ProgressLog, expectedAt: string | null, undo = false): Promise<boolean> {
+    const current = this.state.entries.find((item) => item.id === entry.id);
+    if (!current || (current.progress?.updatedAt ?? null) !== expectedAt) return false;
+    this.state.entries = this.state.entries.map((item) => item.id === entry.id ? structuredClone(entry) : item);
+    this.state.logs = undo ? this.state.logs.filter((item) => item.id !== log.id) : [...this.state.logs, { ...log }];
+    this.write();
+    return true;
+  }
+
   async saveShelves(shelves: Shelf[]): Promise<void> {
     const byId = new Map(this.state.shelves.map((s) => [s.id, s]));
     for (const shelf of shelves) byId.set(shelf.id, { ...shelf });
@@ -60,6 +75,15 @@ export class GuestRepository implements LibraryRepository {
 
   async deleteShelf(id: string): Promise<void> {
     this.state.shelves = this.state.shelves.filter((s) => s.id !== id);
+    this.write();
+  }
+
+  async moveBooksAndDeleteShelf(id: string, targetId: string, now = new Date()): Promise<void> {
+    const target = this.state.shelves.find((shelf) => shelf.id === targetId);
+    if (id === targetId || !this.state.shelves.some((shelf) => shelf.id === id && shelf.kind === null)
+      || !target) throw new Error('Shelf is unavailable');
+    this.state.entries = this.state.entries.map((entry) => entry.shelfId === id ? rehomeEntry(entry, target, now) : entry);
+    this.state.shelves = this.state.shelves.filter((shelf) => shelf.id !== id);
     this.write();
   }
 

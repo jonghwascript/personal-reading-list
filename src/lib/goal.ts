@@ -16,9 +16,9 @@ export interface GoalProgress {
 /** Fraction of the year elapsed at the given instant (0–1), using local calendar days. */
 export function yearFraction(now: Date): number {
   const year = now.getFullYear();
-  const start = new Date(year, 0, 1).getTime();
-  const end = new Date(year + 1, 0, 1).getTime();
-  return (now.getTime() - start) / (end - start);
+  const start = Date.UTC(year, 0, 1);
+  const end = Date.UTC(year + 1, 0, 1);
+  return (Date.UTC(year, now.getMonth(), now.getDate()) - start) / (end - start);
 }
 
 export function booksFinishedInYear(entries: LibraryEntry[], year: number): LibraryEntry[] {
@@ -31,12 +31,12 @@ export function booksFinishedInYear(entries: LibraryEntry[], year: number): Libr
  */
 export function goalProgress(goal: ReadingGoal, completed: number, now: Date = new Date()): GoalProgress {
   const fraction = now.getFullYear() === goal.year ? yearFraction(now) : now.getFullYear() > goal.year ? 1 : 0;
-  const expected = goal.target * fraction;
-  const delta = Math.round((completed - expected) * 10) / 10;
+  const expected = Math.round(goal.target * fraction);
+  const delta = completed - expected;
   let status: PaceStatus;
   if (completed >= goal.target) status = 'complete';
   else if (delta >= 1) status = 'ahead';
-  else if (delta > -1) status = 'on-track';
+  else if (delta === 0) status = 'on-track';
   else status = 'behind';
   return {
     target: goal.target,

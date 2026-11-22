@@ -9,10 +9,10 @@ describe('goalProgress', () => {
     expect(goalProgress(goal, 12, july1).status).toBe('on-track');
   });
 
-  it('reports ahead and behind with a one-book tolerance', () => {
+  it('compares the count with the rounded expected count', () => {
     const july1 = new Date(2026, 6, 1);
     expect(goalProgress(goal, 14, july1).status).toBe('ahead');
-    expect(goalProgress(goal, 11, july1).status).toBe('on-track');
+    expect(goalProgress(goal, 11, july1).status).toBe('behind');
     expect(goalProgress(goal, 9, july1).status).toBe('behind');
   });
 

@@ -133,6 +133,9 @@ export function SignUpPage() {
   usePageTitle('Create account');
   const { signUp, status, authAvailable } = useSession();
   const navigate = useNavigate();
+  const { search } = useLocation();
+  const review = new URLSearchParams(search).get('review');
+  const returnToReview = review && /^\d{4}$/.test(review) ? `/review/${review}` : null;
   const [error, setError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
@@ -173,6 +176,7 @@ export function SignUpPage() {
             three default shelves will be waiting.
           </p>
         </div>
+        {returnToReview && <Link to={returnToReview}>Back to the year review</Link>}
       </AuthLayout>
     );
   }
@@ -192,6 +196,7 @@ export function SignUpPage() {
           Heads up: the sample guest library isn’t copied into new accounts — you’ll start with empty shelves of your own.
         </p>
       )}
+      {status === 'guest' && returnToReview && <Link to={returnToReview}>Back to the year review</Link>}
       {!authAvailable ? (
         <AuthUnavailable />
       ) : (

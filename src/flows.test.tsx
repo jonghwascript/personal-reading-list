@@ -1,6 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from './App';
+import { GuestRepository } from './data/guestRepository';
 import { GUEST_SHELVES } from './data/guestSeed';
 import { __resetOpenLibraryForTests } from './lib/openLibrary';
 
@@ -30,7 +31,10 @@ beforeEach(() => {
   );
 });
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
 
 it('takes a new reader from an empty shelf to their year in review', async () => {
   const user = userEvent.setup();
@@ -39,19 +43,20 @@ it('takes a new reader from an empty shelf to their year in review', async () =>
 
   // 1. Empty library: search plus curated lists, no dead end.
   expect(await screen.findByRole('heading', { level: 1, name: /fill your first shelf/i })).toBeInTheDocument();
-  expect(screen.getByRole('searchbox', { name: /search for a book/i })).toBeInTheDocument();
-  const shortNovels = screen.getByRole('list', { name: 'Short novels for a weekend' });
+  await user.click(screen.getByRole('link', { name: 'Add your first book' }));
+  expect(await screen.findByRole('searchbox', { name: /search books/i })).toBeInTheDocument();
+  const shortNovels = await screen.findByRole('list', { name: 'Short novels for a weekend' });
 
-  // 2. A multi-edition book asks which edition, with "Not sure yet" pre-selected.
-  await user.click(within(shortNovels).getByRole('button', { name: /add small things like these/i }));
+  // 2. The optional edition picker lets the reader choose a specific copy.
+  await user.click(within(shortNovels).getByRole('button', { name: /other editions of small things like these/i }));
   expect(await screen.findByRole('heading', { name: /which edition of small things like these/i })).toBeInTheDocument();
   // The edition choice opens as a modal dialog named by its question.
   expect(screen.getByRole('dialog', { name: /which edition of small things like these/i })).toBeInTheDocument();
   await user.click(await screen.findByRole('radio', { name: /116 pages/i }, { timeout: 3000 }));
   await user.selectOptions(screen.getByRole('combobox', { name: 'Shelf' }), 'Currently Reading');
   await user.click(screen.getByRole('button', { name: 'Add to Currently Reading' }));
-  expect(await screen.findByRole('link', { name: /in your library/i })).toHaveFocus();
-  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(await screen.findByRole('heading', { level: 1, name: 'Currently Reading' })).toBeInTheDocument();
+  expect(await screen.findByRole('link', { name: /small things like these/i })).toBeInTheDocument();
 
   // 3. Dashboard: log the last page from the Currently Reading card.
   await user.click(screen.getAllByRole('link', { name: 'Library' })[0]!);
@@ -60,7 +65,12 @@ it('takes a new reader from an empty shelf to their year in review', async () =>
   const pageInput = screen.getByRole('spinbutton', { name: /last page read/i });
   await user.clear(pageInput);
   await user.type(pageInput, '58');
+  vi.spyOn(GuestRepository.prototype, 'saveProgress').mockRejectedValueOnce(new Error('Offline'));
   await user.click(screen.getByRole('button', { name: 'Save' }));
+  expect(await screen.findByText('Couldn’t save progress. Try again.')).toHaveAttribute('role', 'alert');
+  expect(pageInput).toHaveValue(58);
+  expect(screen.getByText('0 / 116 pages')).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Try saving again' }));
   expect(await screen.findByText('58 / 116 pages')).toBeInTheDocument();
   expect(screen.getByText(/halfway there/i)).toBeInTheDocument();
 
@@ -74,7 +84,8 @@ it('takes a new reader from an empty shelf to their year in review', async () =>
   await user.clear(again);
   await user.type(again, '116');
   await user.click(screen.getByRole('button', { name: 'Save' }));
-  await user.click(await screen.findByRole('button', { name: 'Mark as finished' }));
+  await user.click(await screen.findByRole('button', { name: 'Not yet' }));
+  await user.click(screen.getByRole('button', { name: 'Move to Read' }));
 
   // 5. It shows up in the year in review.
   await user.click(screen.getAllByRole('link', { name: /year in review|review/i })[0]!);

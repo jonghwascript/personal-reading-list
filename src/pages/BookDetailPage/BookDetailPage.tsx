@@ -1,12 +1,13 @@
 import { ArrowLeft, ExternalLink, Plus, Trash2, X } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from 'react';
-import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useBlocker, useNavigate, useParams } from 'react-router-dom';
 import { BookCover } from '../../components/BookCover/BookCover';
 import { ProgressLogger } from '../../components/ProgressLogger/ProgressLogger';
 import { ReadingFormatEditor } from '../../components/ProgressLogger/ReadingFormatEditor';
 import { StarRating } from '../../components/StarRating/StarRating';
 import { Button } from '../../components/ui/Button';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
+import { FinishDateDialog } from '../../components/ui/FinishDateDialog';
 import { formatAuthors, formatDate, pluralize } from '../../lib/format';
 import { daysToFinish, totalPagesOf } from '../../lib/progress';
 import { genresIn } from '../../lib/libraryRules';
@@ -43,16 +44,34 @@ function BookDetail({ entry }: { entry: LibraryEntry }) {
       const rating = Number(e.key) || null;
       if (rating === entry.rating) return;
       e.preventDefault();
-      void updateEntry(entry.id, { rating }).then(() => announce(rating ? `Rated ${rating} out of 5.` : 'Rating cleared.'));
+      void updateEntry(entry.id, { rating })
+        .then(() => announce(rating ? `Rated ${rating} out of 5.` : 'Rating cleared.'))
+        .catch(() => notify('Couldn’t save your rating.', 'error'));
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [entry.id, entry.rating, updateEntry, announce]);
+  }, [entry.id, entry.rating, updateEntry, announce, notify]);
   const navigate = useNavigate();
   const { book } = entry;
   const shelf = shelfById(entry.shelfId);
   const [confirmRemove, setConfirmRemove] = useState(false);
+  const [finishTarget, setFinishTarget] = useState('');
+  const [moving, setMoving] = useState(false);
+  const [moveError, setMoveError] = useState(false);
   const description = useLazyDescription(entry);
+
+  const move = async (targetId: string) => {
+    setMoving(true);
+    setMoveError(false);
+    try {
+      await moveEntries([entry.id], targetId);
+      announce(`Moved to ${shelfById(targetId)?.name ?? 'the selected shelf'}.`);
+    } catch {
+      setMoveError(true);
+    } finally {
+      setMoving(false);
+    }
+  };
 
   // Only rows that have data — sparse books get a shorter list, never "Unknown" placeholders.
   const facts = [
@@ -94,10 +113,15 @@ function BookDetail({ entry }: { entry: LibraryEntry }) {
             <select
               className={page.select}
               value={entry.shelfId}
-              onChange={async (e) => {
-                const target = shelfById(e.target.value);
-                await moveEntries([entry.id], e.target.value);
-                if (target) announce(`Moved to ${target.name}.`);
+              disabled={moving}
+              onChange={(e) => {
+                const targetId = e.target.value;
+                if (shelfById(targetId)?.kind === 'read' && !entry.finishedAt && entry.progress?.percent !== 100) {
+                  setFinishTarget(targetId);
+                  setMoveError(false);
+                  return;
+                }
+                void move(targetId);
               }}
             >
               {shelves.map((s) => (
@@ -107,6 +131,12 @@ function BookDetail({ entry }: { entry: LibraryEntry }) {
               ))}
             </select>
           </label>
+          {finishTarget && <FinishDateDialog onCancel={() => setFinishTarget('')} onMove={async (date) => {
+            await moveEntries([entry.id], finishTarget, date);
+            setFinishTarget('');
+            announce('Moved to Read.');
+          }} />}
+          {moveError && <p role="alert">Couldn’t move this book. Please try again.</p>}
 
           {shelf?.kind === 'reading' && (
             <div className={styles.progress}>
@@ -120,8 +150,12 @@ function BookDetail({ entry }: { entry: LibraryEntry }) {
           <StarRating
             value={entry.rating}
             onChange={async (rating) => {
-              await updateEntry(entry.id, { rating });
-              announce(rating ? `Rated ${rating} out of 5.` : 'Rating cleared.');
+              try {
+                await updateEntry(entry.id, { rating });
+                announce(rating ? `Rated ${rating} out of 5.` : 'Rating cleared.');
+              } catch {
+                notify('Couldn’t save your rating.', 'error');
+              }
             }}
           />
         </section>
@@ -207,9 +241,20 @@ function useLazyDescription(entry: LibraryEntry): string | null {
 function NotesEditor({ entry }: { entry: LibraryEntry }) {
   const { updateEntry } = useLibrary();
   const [draft, setDraft] = useState(entry.notes);
-  const [saved, setSaved] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [saved, setSaved] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const id = useId();
   const dirty = draft !== entry.notes;
+  const blocker = useBlocker(dirty);
+
+  useEffect(() => {
+    if (!dirty) return;
+    const beforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', beforeUnload);
+    return () => window.removeEventListener('beforeunload', beforeUnload);
+  }, [dirty]);
 
   const save = async () => {
     if (!dirty) return;
@@ -218,7 +263,7 @@ function NotesEditor({ entry }: { entry: LibraryEntry }) {
       await updateEntry(entry.id, { notes: draft });
       setSaved('saved');
     } catch {
-      setSaved('idle');
+      setSaved('error');
     }
   };
 
@@ -237,12 +282,18 @@ function NotesEditor({ entry }: { entry: LibraryEntry }) {
           setDraft(e.target.value);
           setSaved('idle');
         }}
-        onBlur={save}
         aria-describedby={`${id}-status`}
       />
+      <Button variant="secondary" disabled={!dirty || saved === 'saving'} onClick={save}>Save notes</Button>
       <p id={`${id}-status`} className={styles.notesStatus} aria-live="polite">
-        {saved === 'saving' ? 'Saving…' : saved === 'saved' ? 'Notes saved' : dirty ? 'Saves when you leave the field' : ''}
+        {saved === 'saving' ? 'Saving…' : saved === 'saved' ? 'Notes saved' : saved === 'error' ? 'Couldn’t save notes. Try again.' : dirty ? 'Unsaved changes' : ''}
       </p>
+      {blocker.state === 'blocked' && (
+        <ConfirmDialog open title="Leave without saving your notes?" confirmLabel="Discard notes" tone="danger"
+          onCancel={blocker.reset} onConfirm={blocker.proceed}>
+          Your edits will be lost.
+        </ConfirmDialog>
+      )}
     </section>
   );
 }

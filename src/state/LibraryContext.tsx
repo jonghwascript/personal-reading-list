@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { DuplicateBookError, type LibraryRepository, type LibrarySnapshot } from '../data/repository';
-import { applyMove, findDuplicate } from '../lib/libraryRules';
+import { applyMove, findDuplicate, rehomeEntry } from '../lib/libraryRules';
 import { applyProgress, recomputeProgress, type Milestone, type ProgressInput } from '../lib/progress';
 import type { Book, EntryPatch, LibraryEntry, Shelf } from '../types';
 import { useAnnouncer } from './AnnouncerContext';
@@ -18,8 +18,8 @@ interface LibraryValue {
   defaultShelf(kind: 'want' | 'reading' | 'read'): Shelf;
   reload(): Promise<void>;
   /** Throws DuplicateBookError when another edition is already in the library. */
-  addBook(book: Book, shelfId: string): Promise<LibraryEntry>;
-  moveEntries(ids: string[], shelfId: string): Promise<void>;
+  addBook(book: Book, shelfId: string, editionPages?: number | null): Promise<LibraryEntry>;
+  moveEntries(ids: string[], shelfId: string, finishedDate?: Date): Promise<void>;
   /** Puts entries back exactly as given — dates and progress included. Used by "Undo" after a move. */
   restoreEntries(previous: LibraryEntry[]): Promise<void>;
   updateEntry(id: string, patch: EntryPatch): Promise<void>;
@@ -28,13 +28,13 @@ interface LibraryValue {
    * Saves a position. Returns the milestone crossed (so the UI can offer "Mark as finished" at the
    * end) and an undo that restores the previous position and drops the history row.
    */
-  setProgress(id: string, input: ProgressInput): Promise<{ milestone: Milestone; undo(): Promise<void> }>;
+  setProgress(id: string, input: ProgressInput, expectedAt: string | null): Promise<{ milestone: Milestone; undo(): Promise<void> }>;
   /** Moves the book to the Read shelf, stamping today's finish date. */
   markFinished(id: string): Promise<void>;
   removeEntries(ids: string[]): Promise<void>;
   createShelf(name: string): Promise<Shelf>;
   renameShelf(id: string, name: string): Promise<void>;
-  deleteShelf(id: string): Promise<void>;
+  deleteShelf(id: string, targetId: string): Promise<void>;
   reorderShelves(orderedIds: string[]): Promise<void>;
   setGoal(year: number, target: number): Promise<void>;
   clearGoal(year: number): Promise<void>;
@@ -123,7 +123,7 @@ export function LibraryProvider({ repository, children }: { repository: LibraryR
       defaultShelf,
       reload,
 
-      async addBook(book, shelfId) {
+      async addBook(book, shelfId, editionPages) {
         const duplicate = findDuplicate(current.current.entries, book);
         if (duplicate) throw new DuplicateBookError(duplicate);
         const shelf = current.current.shelves.find((s) => s.id === shelfId) ?? defaultShelf('want');
@@ -140,7 +140,7 @@ export function LibraryProvider({ repository, children }: { repository: LibraryR
             notes: '',
             progress: null,
             format: 'print',
-            totalPages: null,
+            totalPages: editionPages ?? null,
             totalMinutes: null,
           },
           shelf,
@@ -159,12 +159,19 @@ export function LibraryProvider({ repository, children }: { repository: LibraryR
         return saved;
       },
 
-      async moveEntries(ids, shelfId) {
+      async moveEntries(ids, shelfId, finishedDate) {
         const target = current.current.shelves.find((s) => s.id === shelfId);
         if (!target) return;
         const set = new Set(ids);
-        const moved = current.current.entries.filter((e) => set.has(e.id) && e.shelfId !== shelfId).map((e) => applyMove(e, target));
+        const moved = current.current.entries.filter((e) => set.has(e.id) && e.shelfId !== shelfId).map((e) =>
+          applyMove(target.kind === 'read' && finishedDate ? { ...e, finishedAt: finishedDate.toISOString() } : e, target),
+        );
         if (moved.length === 0) return;
+        if (target.kind === 'read') {
+          await repository.saveEntries(moved);
+          commit({ ...current.current, entries: replaceEntries(moved) });
+          return;
+        }
         await optimistic(
           { ...current.current, entries: replaceEntries(moved) },
           () => repository.saveEntries(moved),
@@ -186,8 +193,21 @@ export function LibraryProvider({ repository, children }: { repository: LibraryR
       async updateEntry(id, patch) {
         const entry = current.current.entries.find((e) => e.id === id);
         if (!entry) return;
+        const { notes, rating, ...otherFields } = patch;
+        if (Object.keys(otherFields).length === 0) {
+          const fields = { ...(notes !== undefined ? { notes } : {}), ...(rating !== undefined ? { rating } : {}) };
+          if (Object.keys(fields).length === 0) return;
+          await repository.saveAnnotations(id, fields);
+          const latest = current.current.entries.find((item) => item.id === id);
+          if (latest) commit({ ...current.current, entries: replaceEntries([{ ...latest, ...fields }]) });
+          return;
+        }
         // Changing format or edition length changes what the saved position means.
         const next = recomputeProgress({ ...entry, ...patch });
+        if (next.progress && !(next.progress.percent === 100 && entry.progress?.percent === 100)
+          && (patch.format !== undefined || patch.totalPages !== undefined || patch.totalMinutes !== undefined)) {
+          next.progress = { ...next.progress, updatedAt: new Date().toISOString() };
+        }
         await optimistic({ ...current.current, entries: replaceEntries([next]) }, () => repository.saveEntries([next]), "Couldn't save your changes");
       },
 
@@ -199,26 +219,44 @@ export function LibraryProvider({ repository, children }: { repository: LibraryR
         await optimistic({ ...current.current, entries: replaceEntries(changed) }, () => repository.saveEntries(changed), "Couldn't update genres");
       },
 
-      async setProgress(id, input) {
+      async setProgress(id, input, expectedAt) {
         const entry = current.current.entries.find((e) => e.id === id);
-        if (!entry) return { milestone: null, undo: async () => undefined };
+        if (!entry) throw new Error('This book is no longer in your library');
+        const conflict = () => new Error('Progress changed in another tab. Review the latest saved value before retrying.');
+        if ((entry.progress?.updatedAt ?? null) !== expectedAt) throw conflict();
         const { entry: next, log, milestone } = applyProgress(entry, input);
+        if (entry.progress?.percent === 100 && next.progress?.percent === 100) {
+          return { milestone: null, undo: async () => undefined };
+        }
         const snap = current.current;
-        await optimistic(
-          { ...snap, entries: replaceEntries([next]), logs: [...snap.logs, log] },
-          () => Promise.all([repository.saveEntries([next]), repository.appendLog(log)]),
-          "Couldn't save your reading progress",
-        );
+        commit({ ...snap, entries: replaceEntries([next]), logs: [...snap.logs, log] });
+        try {
+          if (!await repository.saveProgress(next, log, expectedAt)) {
+            await reload();
+            throw conflict();
+          }
+        } catch (error) {
+          const latest = current.current;
+          commit({
+            ...latest,
+            entries: latest.entries.map((item) => item.id === id && item.progress?.updatedAt === next.progress?.updatedAt
+              ? { ...item, progress: entry.progress, startedAt: entry.startedAt }
+              : item),
+            logs: latest.logs.filter((item) => item.id !== log.id),
+          });
+          throw error;
+        }
         const undo = async () => {
           const latest = current.current;
           const restored = latest.entries.find((e) => e.id === id);
           if (!restored) return;
           const previous = { ...restored, progress: entry.progress, startedAt: entry.startedAt };
-          await optimistic(
-            { ...latest, entries: replaceEntries([previous]), logs: latest.logs.filter((l) => l.id !== log.id) },
-            () => Promise.all([repository.saveEntries([previous]), repository.removeLog(log.id)]),
-            "Couldn't undo that update",
-          );
+          if (!await repository.saveProgress(previous, log, next.progress?.updatedAt ?? null, true)) {
+            await reload();
+            throw new Error('A newer progress update is already saved');
+          }
+          const afterUndo = current.current;
+          commit({ ...afterUndo, entries: replaceEntries([previous]), logs: afterUndo.logs.filter((item) => item.id !== log.id) });
         };
         return { milestone, undo };
       },
@@ -227,12 +265,9 @@ export function LibraryProvider({ repository, children }: { repository: LibraryR
         const target = defaultShelf('read');
         const entry = current.current.entries.find((e) => e.id === id);
         if (!entry) return;
-        const finished = applyMove({ ...entry, finishedAt: null }, target);
-        await optimistic(
-          { ...current.current, entries: replaceEntries([finished]) },
-          () => repository.saveEntries([finished]),
-          `Couldn't mark “${entry.book.title}” as finished`,
-        );
+        const finished = applyMove(entry, target);
+        await repository.saveEntries([finished]);
+        commit({ ...current.current, entries: replaceEntries([finished]) });
       },
 
       async removeEntries(ids) {
@@ -247,7 +282,7 @@ export function LibraryProvider({ repository, children }: { repository: LibraryR
 
       async createShelf(name) {
         const snap = current.current;
-        const shelf: Shelf = { id: newId(), name: name.trim(), position: snap.shelves.length, kind: null };
+        const shelf: Shelf = { id: newId(), name: name.trim(), position: Math.max(-1, ...snap.shelves.map((item) => item.position)) + 1, kind: null };
         await optimistic({ ...snap, shelves: [...snap.shelves, shelf] }, () => repository.saveShelves([shelf]), `Couldn't create “${shelf.name}”`);
         return shelf;
       },
@@ -263,23 +298,20 @@ export function LibraryProvider({ repository, children }: { repository: LibraryR
         );
       },
 
-      async deleteShelf(id) {
+      async deleteShelf(id, targetId) {
         const snap = current.current;
         const shelf = snap.shelves.find((s) => s.id === id);
         if (!shelf || shelf.kind) return;
-        // Books are never silently lost: they return to Want to Read with reading state intact.
-        const fallback = defaultShelf('want');
-        const rehomed = snap.entries.filter((e) => e.shelfId === id).map((e) => ({ ...e, shelfId: fallback.id }));
-        const shelves = snap.shelves.filter((s) => s.id !== id).map((s, i) => ({ ...s, position: i }));
-        await optimistic(
-          { ...snap, shelves, entries: replaceEntries(rehomed) },
-          async () => {
-            await repository.saveEntries(rehomed);
-            await repository.deleteShelf(id);
-            await repository.saveShelves(shelves);
-          },
-          `Couldn't delete “${shelf.name}”`,
-        );
+        const target = snap.shelves.find((item) => item.id === targetId);
+        if (!target) throw new Error('Shelf is unavailable');
+        const now = new Date();
+        await repository.moveBooksAndDeleteShelf(id, targetId, now);
+        const latest = current.current;
+        commit({
+          ...latest,
+          shelves: latest.shelves.filter((item) => item.id !== id),
+          entries: latest.entries.map((entry) => entry.shelfId === id ? rehomeEntry(entry, target, now) : entry),
+        });
       },
 
       async reorderShelves(orderedIds) {

@@ -97,7 +97,7 @@ function PageLength({ entry }: { entry: LibraryEntry }) {
       <p id={`${id}-pages-hint`} className={styles.hint}>
         {catalog
           ? `Open Library lists ${catalog} pages; editions vary. Change it if your copy differs.`
-          : 'Open Library doesn’t know this book’s length — add it to see a percentage.'}
+          : 'You can log a percentage now or add the total to log by page.'}
       </p>
     </form>
   );

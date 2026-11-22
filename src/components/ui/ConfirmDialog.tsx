@@ -9,6 +9,8 @@ interface ConfirmDialogProps {
   children?: ReactNode;
   confirmLabel: string;
   tone?: 'danger' | 'primary';
+  busy?: boolean;
+  confirmDisabled?: boolean;
   onConfirm(): void;
   onCancel(): void;
 }
@@ -17,7 +19,7 @@ interface ConfirmDialogProps {
  * Built on native <dialog>: focus trapping, Escape, inert background and focus return to the
  * trigger all come from the platform. Reserved for destructive actions (patterns.md).
  */
-export function ConfirmDialog({ open, title, children, confirmLabel, tone = 'primary', onConfirm, onCancel }: ConfirmDialogProps) {
+export function ConfirmDialog({ open, title, children, confirmLabel, tone = 'primary', busy = false, confirmDisabled = false, onConfirm, onCancel }: ConfirmDialogProps) {
   // Springs in, sinks out (GSAP); instant under reduced motion.
   const ref = useAnimatedDialog(open);
 
@@ -29,11 +31,11 @@ export function ConfirmDialog({ open, title, children, confirmLabel, tone = 'pri
       aria-describedby="confirm-body"
       onCancel={(e) => {
         e.preventDefault();
-        onCancel();
+        if (!busy) onCancel();
       }}
       onClick={(e) => {
         // Clicking the backdrop (the dialog element itself, outside the panel) cancels.
-        if (e.target === e.currentTarget) onCancel();
+        if (!busy && e.target === e.currentTarget) onCancel();
       }}
     >
       <div className={styles.panel}>
@@ -46,10 +48,10 @@ export function ConfirmDialog({ open, title, children, confirmLabel, tone = 'pri
           </div>
         )}
         <div className={styles.actions}>
-          <Button variant="secondary" onClick={onCancel} autoFocus>
+          <Button variant="secondary" onClick={onCancel} disabled={busy} autoFocus>
             Cancel
           </Button>
-          <Button variant={tone === 'danger' ? 'danger' : 'primary'} onClick={onConfirm}>
+          <Button variant={tone === 'danger' ? 'danger' : 'primary'} onClick={onConfirm} disabled={busy || confirmDisabled}>
             {confirmLabel}
           </Button>
         </div>

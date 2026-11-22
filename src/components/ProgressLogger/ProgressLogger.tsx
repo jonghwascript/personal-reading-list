@@ -42,6 +42,8 @@ export function ProgressLogger({ entry, variant = 'card' }: ProgressLoggerProps)
   const { setProgress, markFinished, entries } = useLibrary();
   const { announce, notify } = useAnnouncer();
   const [mode, setMode] = useState<Mode>({ kind: 'view' });
+  const [finishing, setFinishing] = useState(false);
+  const [finishError, setFinishError] = useState(false);
   const logButtonRef = useRef<HTMLButtonElement>(null);
   const id = useId();
   const percent = entry.progress?.percent ?? null;
@@ -59,14 +61,18 @@ export function ProgressLogger({ entry, variant = 'card' }: ProgressLoggerProps)
     requestAnimationFrame(() => logButtonRef.current?.focus());
   };
 
-  const save = async (input: ProgressInput) => {
-    let result;
+  const undoSave = async (undo: () => Promise<void>) => {
     try {
-      result = await setProgress(entry.id, input);
+      await undo();
+      announce('Progress update undone.');
     } catch {
-      return; // LibraryContext already rolled back and explained the failure.
+      notify('Couldn’t undo the progress update.', 'error');
     }
-    const { milestone, undo } = result;
+    backToView();
+  };
+
+  const save = async (input: ProgressInput, expectedAt: string | null) => {
+    const { milestone, undo } = await setProgress(entry.id, input, expectedAt);
     if (milestone === 'end') {
       setMode({ kind: 'finish-prompt', undo });
       announce(`You reached the end of ${entry.book.title}. Mark it as finished?`);
@@ -78,9 +84,19 @@ export function ProgressLogger({ entry, variant = 'card' }: ProgressLoggerProps)
   };
 
   const finish = async () => {
-    const year = new Date().getFullYear();
+    if (finishing) return;
+    setFinishing(true);
+    setFinishError(false);
+    const year = new Date(entry.progress?.updatedAt ?? Date.now()).getFullYear();
     const before = booksFinishedInYear(entries, year).length;
-    await markFinished(entry.id);
+    try {
+      await markFinished(entry.id);
+    } catch {
+      setFinishError(true);
+      return;
+    } finally {
+      setFinishing(false);
+    }
     const message = `Finished! That’s ${pluralize(before + 1, 'book')} in ${year}.`;
     setMode({ kind: 'finished', message });
     notify(`You finished “${entry.book.title}”. ${message}`, 'success');
@@ -148,9 +164,7 @@ export function ProgressLogger({ entry, variant = 'card' }: ProgressLoggerProps)
           entry={entry}
           idPrefix={id}
           onCancel={backToView}
-          onSave={async (input) => {
-            await save(input);
-          }}
+          onSave={save}
         />
       ) : mode.kind === 'finish-prompt' ? (
         <div className={styles.finishPrompt}>
@@ -158,25 +172,23 @@ export function ProgressLogger({ entry, variant = 'card' }: ProgressLoggerProps)
             <BookCheck size={18} aria-hidden="true" /> That’s the last page. Mark it as finished?
           </p>
           <div className={styles.actions}>
-            <Button variant="primary" size="sm" onClick={finish}>
+            <Button variant="primary" size="sm" disabled={finishing} onClick={finish}>
               Mark as finished
             </Button>
-            <Button variant="ghost" size="sm" onClick={backToView}>
+            <Button variant="ghost" size="sm" disabled={finishing} onClick={backToView}>
               Not yet
             </Button>
             <Button
               variant="ghost"
               size="sm"
               icon={<Undo2 />}
-              onClick={async () => {
-                await mode.undo();
-                announce('Progress update undone.');
-                backToView();
-              }}
+              disabled={finishing}
+              onClick={() => undoSave(mode.undo)}
             >
               Undo
             </Button>
           </div>
+          {finishError && <p role="alert">Couldn’t move this book. Try again.</p>}
         </div>
       ) : (
         <div className={styles.footer}>
@@ -190,16 +202,15 @@ export function ProgressLogger({ entry, variant = 'card' }: ProgressLoggerProps)
             )}
           </p>
           <div className={styles.actions}>
+            {variant === 'card' && percent === 100 && mode.kind !== 'finished' && (
+              <Button variant="primary" size="sm" disabled={finishing} onClick={finish}>Move to Read</Button>
+            )}
             {mode.kind === 'saved' && (
               <Button
                 variant="ghost"
                 size="sm"
                 icon={<Undo2 />}
-                onClick={async () => {
-                  await mode.undo();
-                  announce('Progress update undone.');
-                  backToView();
-                }}
+                onClick={() => undoSave(mode.undo)}
               >
                 Undo
               </Button>
@@ -210,6 +221,7 @@ export function ProgressLogger({ entry, variant = 'card' }: ProgressLoggerProps)
               </Button>
             )}
           </div>
+          {finishError && <p role="alert">Couldn’t move this book. Try again.</p>}
         </div>
       )}
     </div>
@@ -224,15 +236,20 @@ function PositionForm({
 }: {
   entry: LibraryEntry;
   idPrefix: string;
-  onSave(input: ProgressInput): Promise<void>;
+  onSave(input: ProgressInput, expectedAt: string | null): Promise<void>;
   onCancel(): void;
 }) {
   const { format, total } = positionModel(entry);
-  const position = currentPosition(entry);
+  const usesPercent = format === 'ebook' || (format === 'print' && total === null);
+  const maximum = usesPercent ? 100 : total;
+  const position = usesPercent ? entry.progress?.percent ?? 0 : currentPosition(entry);
   const [value, setValue] = useState(String(position));
   const [hours, setHours] = useState(String(Math.floor(position / 60)));
   const [mins, setMins] = useState(String(position % 60));
   const [busy, setBusy] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [conflicted, setConflicted] = useState(false);
+  const initialVersion = useRef(entry.progress?.updatedAt ?? null);
   const firstRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -242,7 +259,7 @@ function PositionForm({
 
   const audioMinutes = Number(hours || 0) * 60 + Number(mins || 0);
   const numeric = format === 'audio' ? audioMinutes : Number(value);
-  const max = total ?? Infinity;
+  const max = maximum ?? Infinity;
   const valid =
     format === 'audio'
       ? [hours, mins].every((v) => v === '' || /^\d+$/.test(v)) && Number(mins || 0) < 60 && audioMinutes <= max
@@ -252,9 +269,18 @@ function PositionForm({
     e.preventDefault();
     if (!valid || busy) return;
     setBusy(true);
-    const input: ProgressInput = format === 'ebook' ? { percent: numeric } : format === 'audio' ? { minutes: numeric } : { page: numeric };
-    await onSave(input);
-    setBusy(false);
+    const input: ProgressInput = usesPercent ? { percent: numeric } : format === 'audio' ? { minutes: numeric } : { page: numeric };
+    try {
+      await onSave(input, conflicted ? entry.progress?.updatedAt ?? null : initialVersion.current);
+    } catch (error) {
+      const conflict = error instanceof Error && error.message.startsWith('Progress changed');
+      setConflicted(conflict);
+      setSaveError(conflict
+        ? 'Progress changed in another tab. Review the saved value above before retrying.'
+        : 'Couldn’t save progress. Try again.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   const hintId = `${idPrefix}-hint`;
@@ -306,7 +332,7 @@ function PositionForm({
       ) : (
         <div className={styles.fieldset}>
           <label htmlFor={`${idPrefix}-value`} className={styles.label}>
-            {format === 'ebook' ? 'Percent read' : 'Last page read'}
+            {usesPercent ? 'Percent read' : 'Last page read'}
           </label>
           <div className={styles.row}>
             <input
@@ -315,7 +341,8 @@ function PositionForm({
               type="number"
               inputMode="numeric"
               min={0}
-              max={total ?? undefined}
+              max={maximum ?? undefined}
+              step={usesPercent ? 0.1 : 1}
               value={value}
               onChange={(e) => setValue(e.target.value)}
               className={styles.input}
@@ -323,17 +350,18 @@ function PositionForm({
               aria-describedby={hintId}
             />
             <span className={styles.suffix} aria-hidden="true">
-              {format === 'ebook' ? '%' : total ? `/ ${total}` : ''}
+              {usesPercent ? '%' : total ? `/ ${total}` : ''}
             </span>
           </div>
         </div>
       )}
       <p id={hintId} className={valid ? styles.hint : styles.error}>
-        {valid ? hint : format === 'audio' ? 'Check the hours and minutes.' : `Enter a number from 0 to ${total ?? 'the last page'}.`}
+        {valid ? (usesPercent ? 'Enter the percentage read, from 0 to 100.' : hint) : format === 'audio' ? 'Check the hours and minutes.' : `Enter a number from 0 to ${maximum ?? 'the last page'}.`}
       </p>
+      {saveError && <p role="alert" className={styles.error}>{saveError}</p>}
       <div className={styles.actions}>
         <Button type="submit" variant="primary" size="sm" disabled={!valid || busy}>
-          Save
+          {saveError ? 'Try saving again' : 'Save'}
         </Button>
         <Button variant="ghost" size="sm" onClick={onCancel}>
           Cancel

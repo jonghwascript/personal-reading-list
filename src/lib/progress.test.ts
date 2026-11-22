@@ -49,6 +49,13 @@ describe('applyProgress', () => {
     expect(describeRemaining(e)).toBeNull();
   });
 
+  it('keeps the print format for a percentage-only entry and converts it when the total becomes known', () => {
+    const { entry: saved } = applyProgress(entry({}, null), { percent: 40 }, NOW);
+    expect(saved.format).toBe('print');
+    expect(describePosition(saved)).toBe('40%');
+    expect(recomputeProgress({ ...saved, totalPages: 300 }).progress).toMatchObject({ currentPage: 120, percent: 40 });
+  });
+
   it('prefers the user’s edition length over the catalog count', () => {
     const { entry: e } = applyProgress(entry({ totalPages: 200 }), { page: 100 }, NOW);
     expect(e.progress?.percent).toBe(50);

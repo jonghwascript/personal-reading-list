@@ -105,8 +105,9 @@ describe.skipIf(!enabled)('SupabaseRepository (live)', () => {
     const reading = shelves.find((s) => s.kind === 'reading')!;
     const moved = applyMove(entry, reading);
     const { entry: progressed, log } = applyProgress(moved, { page: 50 });
-    await repoA.saveEntries([{ ...progressed, rating: 4, notes: 'Integration note' }]);
-    await repoA.appendLog(log);
+    await repoA.saveEntries([{ ...moved, rating: 4, notes: 'Integration note' }]);
+    expect(await repoA.saveProgress(progressed, log, moved.progress!.updatedAt)).toBe(true);
+    expect(await repoA.saveProgress(progressed, log, null)).toBe(false);
 
     const snap = await repoA.load();
     const saved = snap.entries[0]!;
@@ -135,11 +136,14 @@ describe.skipIf(!enabled)('SupabaseRepository (live)', () => {
     expect(snap.goals).toEqual([{ year, target: 12 }]);
     expect(snap.shelves.map((s) => s.name)).toContain('IT Favorites');
 
-    await repoA.deleteShelf(custom.id);
+    const previous = snap.entries[0]!;
+    await repoA.saveEntries([{ ...previous, shelfId: custom.id }]);
+    await repoA.moveBooksAndDeleteShelf(custom.id, previous.shelfId);
     const defaultShelf = snap.shelves.find((s) => s.kind === 'read')!;
     await expect(repoA.deleteShelf(defaultShelf.id)).rejects.toThrow(/default shelves/i);
     snap = await repoA.load();
     expect(snap.shelves).toHaveLength(3);
+    expect(snap.entries[0]?.shelfId).toBe(previous.shelfId);
   });
 
   it('isolates users: B sees none of A’s data and cannot write into it', async () => {

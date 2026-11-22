@@ -23,6 +23,27 @@
   font-weight: var(--font-regular);
 }
 
+.split {
+  display: inline-flex;
+  gap: 1px;
+}
+
+.split > :first-child {
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
+}
+
+.split > :last-child {
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+}
+
+.shelfOptions {
+  margin: var(--space-1) 0;
+  padding: 0;
+  list-style: none;
+}
+
 /* ------------------------------------------------------------------ Edition dialog */
 .dialog {
   width: min(34rem, calc(100% - 2 * var(--space-4)));

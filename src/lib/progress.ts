@@ -32,6 +32,7 @@ export function currentPosition(entry: LibraryEntry): number {
 
 const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, Number.isFinite(n) ? n : min));
 const round1 = (n: number) => Math.round(n * 10) / 10;
+const percentOf = (position: number, total: number) => position >= total ? 100 : Math.min(99.9, round1((position / total) * 100));
 
 function milestoneBetween(before: number | null, after: number | null): Milestone {
   if (after === null) return null;
@@ -62,11 +63,11 @@ export function applyProgress(
   } else if ('minutes' in input) {
     const total = entry.totalMinutes;
     const minutes = Math.round(clamp(input.minutes, 0, total ?? Number.MAX_SAFE_INTEGER));
-    progress = { currentPage: null, percent: total ? round1((minutes / total) * 100) : null, minutes, updatedAt };
+    progress = { currentPage: null, percent: total ? percentOf(minutes, total) : null, minutes, updatedAt };
   } else {
     const total = totalPagesOf(entry);
     const page = Math.round(clamp(input.page, 0, total ?? Number.MAX_SAFE_INTEGER));
-    progress = { currentPage: page, percent: total ? round1((page / total) * 100) : null, minutes: null, updatedAt };
+    progress = { currentPage: page, percent: total ? percentOf(page, total) : null, minutes: null, updatedAt };
   }
 
   const milestone = milestoneBetween(entry.progress?.percent ?? null, progress.percent);
@@ -88,12 +89,16 @@ export function applyProgress(
 export function recomputeProgress(entry: LibraryEntry): LibraryEntry {
   const p = entry.progress;
   if (!p) return entry;
+  const pages = totalPagesOf(entry);
+  if (entry.format === 'print' && pages && p.currentPage === null && p.percent !== null) {
+    return { ...entry, progress: { ...p, currentPage: Math.round((p.percent / 100) * pages) } };
+  }
   const ratio = (position: number | null, total: number | null): number | null => {
     if (position === null) return p.percent; // no position in this unit yet: keep what we had
-    return total ? round1(clamp((position / total) * 100, 0, 100)) : null;
+    return total ? percentOf(position, total) : null;
   };
   let percent = p.percent;
-  if (entry.format === 'print') percent = ratio(p.currentPage, totalPagesOf(entry));
+  if (entry.format === 'print') percent = ratio(p.currentPage, pages);
   if (entry.format === 'audio') percent = ratio(p.minutes, entry.totalMinutes);
   return { ...entry, progress: { ...p, percent } };
 }
@@ -114,6 +119,7 @@ export function describePosition(entry: LibraryEntry): string {
   }
   const total = totalPagesOf(entry);
   const page = p?.currentPage ?? 0;
+  if (!total && p?.percent != null) return `${p.percent}%`;
   return total ? `${page} / ${total} pages` : `Page ${page}`;
 }
 

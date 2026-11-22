@@ -12,7 +12,7 @@ import { Button } from '../../components/ui/Button';
 import { formatAuthors, pluralize } from '../../lib/format';
 import { useCoverTint } from '../../lib/coverTint';
 import { booksFinishedInYear } from '../../lib/goal';
-import { authorsIn, filterEntries, genresIn, sortEntries, type EntryFilter } from '../../lib/libraryRules';
+import { authorsIn, filterEntries, genresIn, sortEntries, UNKNOWN_GENRE, type EntryFilter } from '../../lib/libraryRules';
 import { openWithCoverTransition, useFlipGrid } from '../../lib/motion';
 import { usePageTitle } from '../../lib/usePageTitle';
 import { useLibrary } from '../../state/LibraryContext';
@@ -69,7 +69,7 @@ export function LibraryPage() {
               ? 'Add a book you’re reading now, one you loved, or one you’ve been meaning to start.'
               : `${pluralize(entries.length, 'book')} so far. Add a couple more and your full library view opens up.`}
           </p>
-          <StartSearch autoFocus={entries.length === 0} />
+          {entries.length === 0 ? <Link to="/discover">Add your first book</Link> : <StartSearch />}
         </header>
         {reading.length > 0 && readingShelf && <ReadingSection entries={reading} shelfId={readingShelf.id} />}
         {others.length > 0 && (
@@ -286,6 +286,7 @@ function LibraryFilters({ filter, onChange }: { filter: EntryFilter; onChange(f:
         Genre
         <select className={page.select} value={filter.genre ?? ''} onChange={(e) => onChange({ ...filter, genre: e.target.value || null })}>
           <option value="">All genres</option>
+          {entries.some((entry) => entry.book.genres.length === 0) && <option value={UNKNOWN_GENRE}>Genre unknown</option>}
           {genres.map((g) => (
             <option key={g}>{g}</option>
           ))}

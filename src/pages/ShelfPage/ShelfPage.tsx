@@ -32,7 +32,7 @@ const EMPTY_COPY: Record<string, string> = {
 
 export function ShelfPage() {
   const { shelfId = '' } = useParams();
-  const { shelfById, entries, renameShelf, deleteShelf, defaultShelf } = useLibrary();
+  const { shelves, shelfById, entries, renameShelf, deleteShelf, defaultShelf } = useLibrary();
   const { announce, notify } = useAnnouncer();
   const navigate = useNavigate();
   const shelf = shelfById(shelfId);
@@ -45,6 +45,10 @@ export function ShelfPage() {
   const [view, setView] = useShelfView();
   const [renaming, setRenaming] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [targetShelfId, setTargetShelfId] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState(false);
+  const targetShelf = shelves.find((item) => item.id === targetShelfId && item.id !== shelfId) ?? defaultShelf('want');
 
   const shelfEntries = useMemo(() => entries.filter((e) => e.shelfId === shelfId), [entries, shelfId]);
   const visible = useMemo(
@@ -167,23 +171,43 @@ export function ShelfPage() {
         title={`Delete “${shelf.name}”?`}
         confirmLabel="Delete shelf"
         tone="danger"
-        onCancel={() => setConfirmDelete(false)}
-        onConfirm={async () => {
+        busy={deleting}
+        onCancel={() => {
+          if (deleting) return;
+          setDeleteError(false);
           setConfirmDelete(false);
-          const fallback = defaultShelf('want');
-          await deleteShelf(shelf.id);
+        }}
+        onConfirm={async () => {
+          if (deleting) return;
+          setDeleting(true);
+          setDeleteError(false);
+          try {
+            await deleteShelf(shelf.id, targetShelf.id);
+          } catch {
+            setDeleteError(true);
+            return;
+          } finally {
+            setDeleting(false);
+          }
+          setConfirmDelete(false);
           notify(
             shelfEntries.length
-              ? `Deleted “${shelf.name}”. ${pluralize(shelfEntries.length, 'book')} moved to ${fallback.name}.`
+              ? `Deleted “${shelf.name}”. ${pluralize(shelfEntries.length, 'book')} moved to ${targetShelf.name}.`
               : `Deleted “${shelf.name}”.`,
             'success',
           );
           navigate('/library');
         }}
       >
-        {shelfEntries.length > 0
-          ? `The ${pluralize(shelfEntries.length, 'book')} on this shelf will move to ${defaultShelf('want').name}. Ratings, notes and progress are kept.`
-          : 'This shelf is empty, so nothing else will change.'}
+        {shelfEntries.length > 0 ? (
+          <label>
+            Move {pluralize(shelfEntries.length, 'book')} to
+            <select value={targetShelf.id} disabled={deleting} onChange={(event) => setTargetShelfId(event.target.value)}>
+              {shelves.filter((item) => item.id !== shelfId).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+            </select>
+          </label>
+        ) : 'This shelf is empty.'}
+        {deleteError && <p role="alert">Couldn’t delete this shelf. Please try again.</p>}
       </ConfirmDialog>
     </div>
   );

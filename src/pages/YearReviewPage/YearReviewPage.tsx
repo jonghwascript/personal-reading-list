@@ -1,15 +1,16 @@
-import { ArrowLeft, ArrowRight, BookOpen, Download, Share2, X } from 'lucide-react';
+import { BookOpen, Download, Share2, X } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { Link, Navigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate, useNavigationType, useParams } from 'react-router-dom';
 import { BookCover } from '../../components/BookCover/BookCover';
 import { StarRating } from '../../components/StarRating/StarRating';
 import { Button, ButtonLink } from '../../components/ui/Button';
-import { formatAuthors, pluralize } from '../../lib/format';
+import { formatAuthors, formatDate, pluralize } from '../../lib/format';
 import { canvasToBlob, drawShareCard } from '../../lib/shareCard';
 import { usePageTitle } from '../../lib/usePageTitle';
-import { buildYearReview, countWord, MONTHS, reviewSentence, yearsWithFinishedBooks, type YearReview } from '../../lib/yearReview';
+import { buildYearReview, MONTHS, reviewSentence, yearsWithFinishedBooks, type YearReview } from '../../lib/yearReview';
 import { useAnnouncer } from '../../state/AnnouncerContext';
 import { useLibrary } from '../../state/LibraryContext';
+import { useSession } from '../../state/SessionContext';
 import type { LibraryEntry } from '../../types';
 import styles from './YearReviewPage.module.css';
 import { useReviewMotion } from './useReviewMotion';
@@ -19,15 +20,36 @@ import { isDarkThemeActive } from '../../lib/theme';
  * Design challenge #1. Starts from the books themselves — covers and one sentence — so a reader
  * with three books gets a story, not a sparse dashboard. Charts sit below for those who want them.
  */
-export function YearReviewPage() {
+const listReturn = new Map<string, number>();
+
+export function YearBooksPage() {
+  return <YearReviewPage full />;
+}
+
+export function YearReviewPage({ full = false }: { full?: boolean }) {
   const { year: yearParam } = useParams();
   const { entries } = useLibrary();
+  const { status } = useSession();
+  const navigationType = useNavigationType();
+  const location = useLocation();
+  const navigate = useNavigate();
   const now = new Date();
   const year = yearParam ? Number(yearParam) : now.getFullYear();
   usePageTitle(`${year} in books`);
 
   const review = useMemo(() => buildYearReview(entries, year, now), [entries, year]); // eslint-disable-line react-hooks/exhaustive-deps
   const pageRef = useRef<HTMLDivElement>(null);
+  const fullListRef = useRef<HTMLAnchorElement>(null);
+  useEffect(() => {
+    const top = listReturn.get(location.key);
+    if (full || navigationType !== 'POP' || top === undefined) return;
+    listReturn.delete(location.key);
+    const frame = requestAnimationFrame(() => {
+      fullListRef.current?.focus({ preventScroll: true });
+      window.scrollTo(0, top);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [full, navigationType, location.key]);
   // Re-run the scroll story when the year or its book count changes.
   useReviewMotion(pageRef, `${year}:${review.finished.length}`);
   const years = useMemo(() => {
@@ -38,31 +60,42 @@ export function YearReviewPage() {
 
   if (!Number.isInteger(year) || year < 1900 || year > now.getFullYear()) return <Navigate to="/review" replace />;
 
-  const prev = years.filter((y) => y < year).at(-1);
-  const next = years.find((y) => y > year);
+  if (full) return (
+    <div className={styles.page}>
+      <Link to={`/review/${year}`} onClick={(event) => {
+        if (!location.state?.fromReview || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        void navigate(-1);
+      }}>Back to the {year} review</Link>
+      <h1>Books finished in {year}</h1>
+      <BooksByMonth review={review} />
+    </div>
+  );
 
   return (
     <div className={styles.page} ref={pageRef}>
-      <Hero review={review} prev={prev} next={next} />
-      {review.finished.length > 0 ? (
-        <>
-          <MonthChart review={review} />
-          {(review.genres || review.pages) && (
-            <div className={styles.facts} data-anim="reveal">
-              {review.genres && <GenreBreakdown genres={review.genres} total={review.finished.length} />}
-              {review.pages && <PageTotal pages={review.pages} />}
-            </div>
-          )}
-          <BooksByMonth review={review} />
-        </>
-      ) : null}
+      <Hero review={review} years={years} />
+      {review.finished.length > 6 && <Link ref={fullListRef} to={`/review/${year}/books`} state={{ fromReview: true }} onClick={(event) => {
+        if (event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
+          listReturn.clear();
+          listReturn.set(location.key, window.scrollY);
+        }
+      }}>View all finished books</Link>}
+      {review.finished.length > 1 && <MonthChart review={review} />}
+      {review.finished.length > 0 && <ReviewSharing key={year} review={review} />}
+      {status === 'guest' && <section>
+        <h2>Start your own reading record</h2>
+        <p>Create an account to save your books and goals. Your personal shelves start empty.</p>
+        <ButtonLink to={`/signup?review=${year}`} variant="primary">Create an account</ButtonLink>
+      </section>}
     </div>
   );
 }
 
-function Hero({ review, prev, next }: { review: YearReview; prev?: number; next?: number }) {
-  const { entries, shelves } = useLibrary();
-  const [sharing, setSharing] = useState(false);
+function Hero({ review, years }: { review: YearReview; years: number[] }) {
+  const { entries, shelves, goals, moveEntries } = useLibrary();
+  const navigate = useNavigate();
+  const [startError, setStartError] = useState(false);
   const n = review.finished.length;
   const eyebrow = review.isCurrentYear
     ? `${review.year} so far · as of ${MONTHS[review.asOf!.getMonth()]} ${review.asOf!.getDate()}`
@@ -70,24 +103,18 @@ function Hero({ review, prev, next }: { review: YearReview; prev?: number; next?
 
   const readingShelf = shelves.find((s) => s.kind === 'reading');
   const reading = entries.filter((e) => e.shelfId === readingShelf?.id);
-  const featureAll = n <= 6;
+  const wantShelf = shelves.find((s) => s.kind === 'want');
+  const wanted = entries.filter((entry) => entry.shelfId === wantShelf?.id)
+    .sort((a, b) => Date.parse(b.addedAt) - Date.parse(a.addedAt)).slice(0, 3);
+  const goal = goals.find((item) => item.year === review.year);
 
   return (
     <section className={styles.hero} aria-labelledby="review-title">
-      <nav className={styles.yearNav} aria-label="Other years">
-        {prev ? (
-          <Link to={`/review/${prev}`} className={styles.yearLink}>
-            <ArrowLeft size={16} aria-hidden="true" /> {prev}
-          </Link>
-        ) : (
-          <span />
-        )}
-        {next && (
-          <Link to={next === new Date().getFullYear() ? '/review' : `/review/${next}`} className={styles.yearLink}>
-            {next} <ArrowRight size={16} aria-hidden="true" />
-          </Link>
-        )}
-      </nav>
+      <label className={styles.yearNav}>
+        Year <select value={review.year} onChange={(event) => navigate(`/review/${event.target.value}`)}>
+          {[...years].reverse().map((year) => <option key={year}>{year}</option>)}
+        </select>
+      </label>
 
       <p className={styles.eyebrow}>{eyebrow}</p>
       <h1 id="review-title" className={styles.headline}>
@@ -109,8 +136,9 @@ function Hero({ review, prev, next }: { review: YearReview; prev?: number; next?
       </h1>
 
       {n > 0 && <p className={styles.sentence}>{reviewSentence(review)}</p>}
+      {goal && <p>{n} / {goal.target} books toward your goal</p>}
 
-      {n === 0 && (
+      {n === 0 && review.isCurrentYear && (
         <div className={styles.emptyActions}>
           {reading[0] ? (
             <>
@@ -121,11 +149,25 @@ function Hero({ review, prev, next }: { review: YearReview; prev?: number; next?
                 Back to {reading[0].book.title}
               </ButtonLink>
             </>
+          ) : wanted.length && readingShelf && wantShelf ? (
+            <>
+              <ul>
+                {wanted.map((entry) => <li key={entry.id}>
+                  <Link to={`/books/${entry.id}`}><BookCover book={entry.book} size="S" />{entry.book.title}</Link>
+                  <Button onClick={() => {
+                    setStartError(false);
+                    void moveEntries([entry.id], readingShelf.id).catch(() => setStartError(true));
+                  }}>Start reading</Button>
+                </li>)}
+              </ul>
+              <Link to={`/shelves/${wantShelf.id}`}>View all Want to Read books</Link>
+              {startError && <p role="alert">Couldn’t move this book. Please try again.</p>}
+            </>
           ) : (
             <>
               <p className={styles.sentence}>Finish a book and it will appear here, along with the month you closed it.</p>
-              <ButtonLink to="/discover" variant="primary">
-                Find something to read
+              <ButtonLink to={entries.length ? '/library' : '/discover'} variant="primary">
+                {entries.length ? 'View your library' : 'Add your first book'}
               </ButtonLink>
             </>
           )}
@@ -133,14 +175,14 @@ function Hero({ review, prev, next }: { review: YearReview; prev?: number; next?
       )}
 
       {n > 0 && (
-        <ul role="list" className={`${styles.covers} ${featureAll ? styles.coversAll : styles.coversFan}`} aria-label={featureAll ? 'Books finished' : 'Highlights'}>
-          {review.featured.map((entry, i) => (
+        <ul role="list" className={`${styles.covers} ${styles.coversAll}`} aria-label="Books finished">
+          {[...review.finished].reverse().slice(0, 6).map((entry, i) => (
             <li key={entry.id} className={styles.coverItem} style={{ '--i': i } as React.CSSProperties}>
               <Link to={`/books/${entry.id}`} className={styles.coverLink}>
-                <BookCover book={entry.book} size={featureAll ? 'L' : 'M'} priority />
-                <span className={featureAll ? styles.coverCaption : 'u-sr-only'}>
-                  {featureAll && <span className={styles.coverMonth}>{MONTHS[new Date(entry.finishedAt!).getMonth()]}</span>}
-                  <span className={featureAll ? styles.coverTitle : undefined}>{entry.book.title}</span>
+                <BookCover book={entry.book} size="L" priority />
+                <span className={styles.coverCaption}>
+                  {entry.finishedAt && <span className={styles.coverMonth}>{formatDate(entry.finishedAt)}</span>}
+                  <span className={styles.coverTitle}>{entry.book.title}</span>
                 </span>
               </Link>
             </li>
@@ -148,13 +190,20 @@ function Hero({ review, prev, next }: { review: YearReview; prev?: number; next?
         </ul>
       )}
 
-      {n > 0 && (
-        <div className={styles.heroActions}>
-          <Button variant="secondary" icon={sharing ? <X /> : <Share2 />} aria-expanded={sharing} aria-controls="share-panel" onClick={() => setSharing((s) => !s)}>
-            {sharing ? 'Close sharing' : 'Share as an image'}
-          </Button>
-        </div>
-      )}
+    </section>
+  );
+}
+
+function ReviewSharing({ review }: { review: YearReview }) {
+  const [sharing, setSharing] = useState(false);
+  return (
+    <section aria-label="Share this year">
+      <div className={styles.heroActions}>
+        <Button variant="secondary" icon={sharing ? <X /> : <Share2 />} aria-expanded={sharing}
+          aria-controls={sharing ? 'share-panel' : undefined} onClick={() => setSharing(!sharing)}>
+          {sharing ? 'Close sharing' : 'Share as an image'}
+        </Button>
+      </div>
       {sharing && <SharePanel review={review} />}
     </section>
   );
@@ -260,12 +309,12 @@ function MonthChart({ review }: { review: YearReview }) {
       <h2 id="months-title" className={styles.sectionTitle}>
         Month by month
       </h2>
-      <div className={styles.chart} aria-hidden="true" data-anim="chart">
-        {review.byMonth.map((count, m) => {
-          const future = m >= review.monthsElapsed;
+      {review.isCurrentYear && <p>{MONTHS[review.monthsElapsed - 1]}: {review.byMonth[review.monthsElapsed - 1]} finished so far · counting in progress</p>}
+      <div className={styles.chart} style={{ gridTemplateColumns: `repeat(${review.monthsElapsed}, minmax(0, 1fr))` }} aria-hidden="true" data-anim="chart">
+        {review.byMonth.slice(0, review.monthsElapsed).map((count, m) => {
           return (
-            <div key={m} className={styles.bar} data-future={future} data-top={review.topMonth?.month === m}>
-              <span className={styles.barValue}>{future ? '' : count}</span>
+            <div key={m} className={styles.bar} data-top={review.topMonth?.month === m}>
+              <span className={styles.barValue}>{count}</span>
               <span className={styles.barFill} data-anim="bar" style={{ blockSize: `${(count / max) * 100}%` }} />
               <span className={styles.barLabel}>{MONTHS[m]!.slice(0, 3)}</span>
             </div>
@@ -294,51 +343,9 @@ function MonthChart({ review }: { review: YearReview }) {
   );
 }
 
-function GenreBreakdown({ genres, total }: { genres: NonNullable<YearReview['genres']>; total: number }) {
-  return (
-    <section className={styles.card} aria-labelledby="genres-title">
-      <h2 id="genres-title" className={styles.cardTitle}>
-        What you read most
-      </h2>
-      <ul role="list" className={styles.genreList}>
-        {genres.map(({ genre, count }) => (
-          <li key={genre} className={styles.genre}>
-            <span className={styles.genreName}>{genre}</span>
-            <span className={styles.genreTrack} aria-hidden="true">
-              <span className={styles.genreFill} data-anim="genre" style={{ inlineSize: `${(count / total) * 100}%` }} />
-            </span>
-            <span className={styles.genreCount}>{pluralize(count, 'book')}</span>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-function PageTotal({ pages }: { pages: NonNullable<YearReview['pages']> }) {
-  return (
-    <section className={styles.card} aria-labelledby="pages-title">
-      <h2 id="pages-title" className={styles.cardTitle}>
-        Pages turned
-      </h2>
-      <p className={styles.pageNumber}>
-        <span aria-hidden="true" data-anim="count-on-scroll" data-count={pages.total}>
-          {pages.total.toLocaleString()}
-        </span>
-        <span className="u-sr-only">{pages.total.toLocaleString()}</span>
-      </p>
-      <p className={styles.cardNote}>
-        {pages.known === pages.of
-          ? `Across all ${countWord(pages.of)} books.`
-          : `Across the ${pages.known} of ${pages.of} books with a known page count.`}
-      </p>
-    </section>
-  );
-}
-
 function BooksByMonth({ review }: { review: YearReview }) {
   const groups = new Map<number, LibraryEntry[]>();
-  for (const e of review.finished) {
+  for (const e of [...review.finished].reverse()) {
     const m = new Date(e.finishedAt!).getMonth();
     groups.set(m, [...(groups.get(m) ?? []), e]);
   }

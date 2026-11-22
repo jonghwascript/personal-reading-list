@@ -56,6 +56,14 @@ describe('applyMove', () => {
     expect(applyMove(read, shelf(null, 'favorites'), NOW)).toMatchObject({ shelfId: 'favorites', finishedAt: NOW.toISOString() });
     expect(applyMove(read, shelf('want'), NOW)).toMatchObject({ finishedAt: null, startedAt: null, progress: null });
   });
+
+  it('keeps the date of the 100% save when the book moves to Read the following year', () => {
+    const lastPage = new Date(2025, 11, 31, 21);
+    const progress = { currentPage: null, percent: 100, minutes: null, updatedAt: lastPage.toISOString() };
+    const moved = applyMove(entry({ shelfId: 'reading', progress }), shelf('read'), new Date(2026, 0, 2, 9));
+    expect(moved.finishedAt).toBe(lastPage.toISOString());
+    expect(moved.progress).toBe(progress);
+  });
 });
 
 describe('findDuplicate', () => {

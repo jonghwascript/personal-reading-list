@@ -1,5 +1,5 @@
-import { lazy, Suspense, useEffect, type ReactNode } from 'react';
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
+import { createBrowserRouter, createRoutesFromElements, Navigate, Outlet, Route, RouterProvider, useLocation } from 'react-router-dom';
 import { AppShell } from './components/AppShell/AppShell';
 import { BookGridSkeleton } from './components/BookGrid/BookGrid';
 import { Button, ButtonLink } from './components/ui/Button';
@@ -19,6 +19,7 @@ const ShelvesPage = named(() => import('./pages/ShelvesPage/ShelvesPage'), 'Shel
 const ShelfPage = named(() => import('./pages/ShelfPage/ShelfPage'), 'ShelfPage');
 const BookDetailPage = named(() => import('./pages/BookDetailPage/BookDetailPage'), 'BookDetailPage');
 const YearReviewPage = named(() => import('./pages/YearReviewPage/YearReviewPage'), 'YearReviewPage');
+const YearBooksPage = named(() => import('./pages/YearReviewPage/YearReviewPage'), 'YearBooksPage');
 const AccountPage = named(() => import('./pages/AccountPage/AccountPage'), 'AccountPage');
 const AccessibilityPage = named(() => import('./pages/AccessibilityPage/AccessibilityPage'), 'AccessibilityPage');
 const LibrarySearchPage = named(() => import('./pages/LibrarySearchPage/LibrarySearchPage'), 'LibrarySearchPage');
@@ -28,44 +29,52 @@ const ForgotPasswordPage = named(() => import('./pages/AuthPages/AuthPages'), 'F
 const ResetPasswordPage = named(() => import('./pages/AuthPages/AuthPages'), 'ResetPasswordPage');
 
 export function App() {
+  const [router] = useState(createAppRouter);
+  return <RouterProvider router={router} />;
+}
+
+function AppProviders() {
   return (
-    // BASE_URL is "/" locally and on Vercel, "/personal-reading-list/" on GitHub Pages.
-    <BrowserRouter basename={import.meta.env.BASE_URL}>
-      <AnnouncerProvider>
-        <SessionProvider>
-          <Suspense fallback={<FullPageLoading />}>
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/guest" element={<EnterGuest />} />
-            <Route path="/signin" element={<SignInPage />} />
-            <Route path="/signup" element={<SignUpPage />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route path="/accessibility" element={<AccessibilityPage />} />
-            <Route
-              element={
-                <RequireLibrary>
-                  <AppShell />
-                </RequireLibrary>
-              }
-            >
-              <Route path="/library" element={<LibraryPage />} />
-              <Route path="/discover" element={<DiscoverPage />} />
-              <Route path="/shelves" element={<ShelvesPage />} />
-              <Route path="/shelves/:shelfId" element={<ShelfPage />} />
-              <Route path="/books/:entryId" element={<BookDetailPage />} />
-              <Route path="/review" element={<YearReviewPage />} />
-              <Route path="/review/:year" element={<YearReviewPage />} />
-              <Route path="/library/search" element={<LibrarySearchPage />} />
-              <Route path="/account" element={<AccountPage />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          </Suspense>
-        </SessionProvider>
-      </AnnouncerProvider>
-    </BrowserRouter>
+    <AnnouncerProvider>
+      <SessionProvider>
+        <Suspense fallback={<FullPageLoading />}><Outlet /></Suspense>
+      </SessionProvider>
+    </AnnouncerProvider>
   );
+}
+
+function createAppRouter() {
+  // BASE_URL is "/" locally and on Vercel, and "/personal-reading-list/" on GitHub Pages.
+  return createBrowserRouter(createRoutesFromElements(
+    <Route element={<AppProviders />}>
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/guest" element={<EnterGuest />} />
+      <Route path="/signin" element={<SignInPage />} />
+      <Route path="/signup" element={<SignUpPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/accessibility" element={<AccessibilityPage />} />
+      <Route
+        element={
+          <RequireLibrary>
+            <AppShell />
+          </RequireLibrary>
+        }
+      >
+        <Route path="/library" element={<LibraryPage />} />
+        <Route path="/discover" element={<DiscoverPage />} />
+        <Route path="/shelves" element={<ShelvesPage />} />
+        <Route path="/shelves/:shelfId" element={<ShelfPage />} />
+        <Route path="/books/:entryId" element={<BookDetailPage />} />
+        <Route path="/review" element={<YearReviewPage />} />
+        <Route path="/review/:year" element={<YearReviewPage />} />
+        <Route path="/review/:year/books" element={<YearBooksPage />} />
+        <Route path="/library/search" element={<LibrarySearchPage />} />
+        <Route path="/account" element={<AccountPage />} />
+      </Route>
+      <Route path="*" element={<NotFound />} />
+    </Route>,
+  ), { basename: import.meta.env.BASE_URL });
 }
 
 /** `/guest` is the URL shared in portfolios: one hop straight into the sample library. */
