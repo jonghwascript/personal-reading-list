@@ -29,6 +29,11 @@
   opacity: 1;
 }
 
+.image[fetchpriority='high'] {
+  opacity: 1;
+  transition: none;
+}
+
 .placeholder {
   display: flex;
   flex-direction: column;
