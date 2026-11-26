@@ -51,6 +51,7 @@ coverage/
 # Misc
 *.tsbuildinfo
 doc/*
-.claude/
+.claude/*
 spec/
 requirements/
+examples/*
